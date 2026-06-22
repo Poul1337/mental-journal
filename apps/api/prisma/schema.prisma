@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+  SHADOWBANNED
+  INACTIVE
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  MODERATOR
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id String @id @default(uuid())
+
+  anonName String @unique @map("anon_name")
+
+  status UserStatus @default(ACTIVE)
+  role UserRole @default(USER)
+
+  trustScore Int @default(0) @map("trust_score")
+
+  email String @unique
+  passwordHash String @map("password_hash")
+
+  emailVerified Boolean @default(false) @map("email_verified")
+
+  bannedAt DateTime? @map("banned_at")
+  bannedReason String? @map("banned_reason")
+  shadowbanned Boolean @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  session Session[]
+}
+
+model Session {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  refreshTokenHash String   @map("refresh_token_hash")
+  expiresAt        DateTime @map("expires_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
