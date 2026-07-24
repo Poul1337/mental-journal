@@ -3,18 +3,19 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import { ValidationPipe } from '@nestjs/common';
-import { HttpExceptionFilter } from './common/exception/http-exception.filter';
-import { DomainExceptionFilter } from './common/exception/domain-exception.filter';
-import { CatchAllExceptionFilter } from './common/exception/catch-all-exception.filter';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import { HttpExceptionFilter } from './common/exception/filters/http-exception.filter';
+import { DomainExceptionFilter } from './common/exception/filters/domain-exception.filter';
+import { CatchAllExceptionFilter } from './common/exception/filters/catch-all-exception.filter';
+import { mapValidationErrors } from './common/exception/utlis/validation-errors.util';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalFilters(
+    new CatchAllExceptionFilter(),
     new HttpExceptionFilter(),
-    new DomainExceptionFilter(),
-    new CatchAllExceptionFilter()
+    new DomainExceptionFilter()
   )
 
   app.use(cookieParser());
@@ -31,6 +32,11 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: (errors) => 
+        new BadRequestException({
+          message: "Validation failed",
+          fieldErrors: mapValidationErrors(errors)
+        })
     }),
   );
 

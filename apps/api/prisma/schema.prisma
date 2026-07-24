@@ -28,7 +28,7 @@ datasource db {
 model User {
   id String @id @default(uuid())
 
-  anonName String @unique @map("anon_name")
+  anonName String @map("anon_name")
 
   status UserStatus @default(ACTIVE)
   role UserRole @default(USER)
@@ -39,6 +39,8 @@ model User {
   passwordHash String @map("password_hash")
 
   emailVerified Boolean @default(false) @map("email_verified")
+  emailVerificationTokenHash String? @map("email_verification_token_hash")
+  emailVerificationTokenExpiresAt DateTime? @map("email_verification_token_expires_at")
 
   bannedAt DateTime? @map("banned_at")
   bannedReason String? @map("banned_reason")
@@ -46,6 +48,7 @@ model User {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
 
   session Session[]
 }

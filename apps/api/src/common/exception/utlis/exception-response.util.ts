@@ -1,5 +1,5 @@
 import { HttpStatus } from "@nestjs/common";
-import { ErrorResponse, FieldError } from "./error-response";
+import { ErrorResponse, FieldError } from "../interfaces/error-response";
 
 export function buildErrorResponse(
     status: number,
@@ -28,14 +28,22 @@ export function parseHttpException(response: string | object): {
     }
 
     const res = response as Record<string, unknown>;
+
+    if(Array.isArray(res.fieldErrors)) {
+        return {
+            message: String(res.message ?? "Validation failed"),
+            fieldErrors: res.fieldErrors as FieldError[],
+        }
+    }
+
     const rawMessage = res.message;
     
     if (Array.isArray(rawMessage)) {
         return {
             message: 'Validation failed',
             fieldErrors: rawMessage.map((msg) => ({
-            field: 'unknown',
-            message: String(msg),
+                field: 'unknown',
+                message: String(msg),
             })),
         };
     }

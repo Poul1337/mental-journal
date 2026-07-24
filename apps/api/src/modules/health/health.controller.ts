@@ -1,6 +1,7 @@
 import { Controller, Get } from "@nestjs/common";
 import { HealthCheck, HealthCheckService } from "@nestjs/terminus";
 import { PrismaService } from "../../prisma/prisma.service";
+import { SkipThrottle } from "@nestjs/throttler";
 
 @Controller('health')
 export class HealthController {
@@ -9,6 +10,7 @@ export class HealthController {
         private readonly prisma: PrismaService
     ) {}
 
+    @SkipThrottle()
     @Get()
     @HealthCheck()
     async check() {
