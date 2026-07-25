@@ -1,3 +1,4 @@
+import { ISSUE_EMAIL_VERIFICATION_PORT, IssueEmailVerificationPort } from './../interfaces/issue-email-verification.port';
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { HashingService } from "./hashing.service";
 import { REGISTER_USER_PORT, RegisterUserPort } from "../interfaces/create-user.port";
@@ -22,6 +23,8 @@ import { VerificationTokenNotFoundException } from "../exceptions/verification-t
 import { VerificationTokenExpiredException } from "../exceptions/verification-token-expired.exception";
 import { VerifyEmailResponseDto } from "../dto/verify-email-response.dto";
 import { AccountNotVerifiedException } from "../exceptions/account-not-verified.exception";
+import { IssueEmailVerificationResult } from '../../../common/enums/issue-email.verification-result.enum';
+import { IssueEmailVerificationResponseDto } from '../dto/issue-email-verification-response.dto';
 
 const DUMMY_PASSWORD_HASH =
   '$2b$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012';
@@ -61,6 +64,9 @@ export class AuthService {
 
         @Inject(VERIFY_EMAIL_PORT)
         private readonly verifyEmailPort: VerifyEmailPort,
+
+        @Inject(ISSUE_EMAIL_VERIFICATION_PORT)
+        private readonly issueEmailVerificationPort: IssueEmailVerificationPort
     ) {
         this.frontEndUrl = this.configService.getOrThrow<string>("FRONTEND_URL");
     }
@@ -130,6 +136,30 @@ export class AuthService {
 
         return {
             message: VERIFY_EMAIL_MESSAGES[result] ?? 'Email verified successfully'
+        }
+    }
+
+    async issueEmailVerification(email: string): Promise<IssueEmailVerificationResponseDto> {
+        const normalized = email.trim().toLowerCase();
+        const { token, tokenHash, expiresAt } = createEmailVerificationToken()
+        const verificationLink = `${this.frontEndUrl}/verify-email?token=${token}`
+
+        const result = await this.issueEmailVerificationPort.execute({
+            email: normalized,
+            tokenHash,
+            expiresAt
+        });
+
+        if(result === IssueEmailVerificationResult.ISSUED) {
+            try {
+                await this.sendVerificationEmailPort.execute(normalized, verificationLink)
+            } catch(error) {
+                this.logger.warn(`Verification email failed for ${normalized}`, error)
+            }
+        }
+
+        return {
+            message: "If an account exists and needs verification, we sent an email."
         }
     }
 

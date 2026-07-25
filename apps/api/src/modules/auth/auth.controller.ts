@@ -10,6 +10,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Throttle } from '@nestjs/throttler';
 import { AuthUser, CurrentUser } from './decorators/current-user.decorator';
 import { VerifyEmailResponseDto } from './dto/verify-email-response.dto';
+import { IssueEmailVerificationResponseDto } from './dto/issue-email-verification-response.dto';
+import { IssueEmailVerificationDto } from './dto/issue-email-verification.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -20,14 +22,14 @@ export class AuthController {
     @ApiCreatedResponse({ type: UserRegisterResponseDto })
     @Post("register")
     @HttpCode(HttpStatus.CREATED)
-    async registerUser(@Body() dto: UserRegisterDto): Promise<UserRegisterResponseDto> {
+    registerUser(@Body() dto: UserRegisterDto): Promise<UserRegisterResponseDto> {
         return this.authService.registerUser(dto);
     }
 
     @Throttle({ default: { limit: 5, ttl: 60_000 } })
     @Post('login')
     @HttpCode(HttpStatus.OK)
-    async login(
+    login(
         @Body() dto: UserLoginDto,
         @Res({ passthrough: true }) res: Response
     ): Promise<UserLoginResponseDto> {
@@ -36,7 +38,7 @@ export class AuthController {
 
     @Get('verify-email')
     @HttpCode(HttpStatus.OK)
-    async verifyEmail(@Query('token') token: string): Promise<VerifyEmailResponseDto> {
+    verifyEmail(@Query('token') token: string): Promise<VerifyEmailResponseDto> {
         return this.authService.verifyEmail(token);
     }
     
@@ -46,7 +48,13 @@ export class AuthController {
         return currentUser;
     }
 
-    //TODO: resend-verification
+    @Throttle({ default: { limit: 3, ttl: 60_000 } })
+    @Post('resend-verification')
+    @HttpCode(HttpStatus.OK)
+    issueVerificationEmail(@Body() dto: IssueEmailVerificationDto): Promise<IssueEmailVerificationResponseDto> {
+        return this.authService.issueEmailVerification(dto.email);
+    }
+
     //TODO: logout
     //TODO: refresh
 }

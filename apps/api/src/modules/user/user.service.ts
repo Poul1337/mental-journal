@@ -1,3 +1,4 @@
+import { IssueEmailVerificationResult } from './../../common/enums/issue-email.verification-result.enum';
 import { UserAlreadyExistsException } from './exception/user-already-exists.exception';
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -7,6 +8,7 @@ import { AnonName } from "./value-objects/anon-name.vo";
 import { Prisma } from '../../generated/prisma/client';
 import { UserCredentials } from './interfaces/user-credentials';
 import { VerifyEmailResult } from '../../common/enums/verify-email-result.enum';
+import { IssueEmailVerificationInputCommand } from './interfaces/issue-email-verification-input.command';
 
 @Injectable()
 export class UserService {
@@ -106,5 +108,32 @@ export class UserService {
     })
 
     return VerifyEmailResult.VERIFIED
+  }
+
+  async issueEmailVerification(input: IssueEmailVerificationInputCommand): Promise<IssueEmailVerificationResult> {
+    const email = input.email.trim().toLowerCase();
+    const { tokenHash, expiresAt } = input;
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        emailVerified: true
+      }
+    })
+
+    if(!user) return IssueEmailVerificationResult.SKIPPED
+
+    if(user.emailVerified) return IssueEmailVerificationResult.SKIPPED
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerificationTokenHash: tokenHash,
+        emailVerificationTokenExpiresAt: expiresAt
+      }
+    })
+
+    return IssueEmailVerificationResult.ISSUED
   }
 }
