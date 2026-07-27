@@ -9,11 +9,12 @@ import { ConfigService } from "@nestjs/config";
 import { PassportModule } from "@nestjs/passport";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { MailModule } from "../mail/mail.module";
+import { SessionModule } from "../session/session.module";
 
 const jwtModuleFactory = (config: ConfigService) => ({
     secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
     signOptions: {
-        expiresIn: config.get<string>('JWT_ACCESS_EXPIRES', '15m')
+        expiresIn: config.get<string>('ACCESS_TOKEN_TTL', '15m')
     } as JwtSignOptions
 })
 
@@ -25,7 +26,8 @@ const jwtModuleFactory = (config: ConfigService) => ({
             inject: [ConfigService],
             useFactory: jwtModuleFactory,
         }),
-        MailModule
+        MailModule,
+        SessionModule
     ],
     providers: [
         AuthService, 

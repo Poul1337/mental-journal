@@ -1,17 +1,18 @@
 import { UserRegisterDto } from './dto/user-register.dto';
 import { UserRegisterResponseDto } from './dto/user-register-response.dto';
 import { AuthService } from './service/auth.service';
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
 import { ApiCreatedResponse } from '@nestjs/swagger';
 import { UserLoginResponseDto } from './dto/user-login-response.dto';
 import { UserLoginDto } from './dto/user-login.dto';
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Throttle } from '@nestjs/throttler';
 import { AuthUser, CurrentUser } from './decorators/current-user.decorator';
 import { VerifyEmailResponseDto } from './dto/verify-email-response.dto';
 import { IssueEmailVerificationResponseDto } from './dto/issue-email-verification-response.dto';
 import { IssueEmailVerificationDto } from './dto/issue-email-verification.dto';
+import { LogoutResponseDto } from './dto/logout-response.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -55,6 +56,26 @@ export class AuthController {
         return this.authService.issueEmailVerification(dto.email);
     }
 
-    //TODO: logout
+    @Post('logout')
+    @HttpCode(HttpStatus.OK)
+    logout(
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response,
+    ): Promise<LogoutResponseDto> {
+        const refreshToken = req.cookies?.['refresh_token']
+        return this.authService.logoutUser(res, refreshToken)
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('logout-all')
+    @HttpCode(HttpStatus.OK)
+    logoutAllSessions(
+        @Res({ passthrough: true }) res: Response,
+        @CurrentUser() currentUser: AuthUser
+    ): Promise<LogoutResponseDto> {
+        const userId = currentUser.userId
+        return this.authService.logoutAll(res, userId)
+    }
+
     //TODO: refresh
 }

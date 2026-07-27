@@ -5,7 +5,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { MailModule } from './modules/mail/mail.module';
 
 const throttleFactory = (configService: ConfigService) => ({
   throttlers: [
@@ -27,7 +26,6 @@ const throttleFactory = (configService: ConfigService) => ({
     PrismaModule, 
     HealthModule,
     AuthModule,
-    MailModule
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard }

@@ -1,9 +1,9 @@
 import { randomBytes, createHash } from "crypto";
 
-export function createEmailVerificationToken() {
+export function createRandomToken(expiresInMs: number) {
     const token = randomBytes(32).toString("hex");
     const tokenHash = createHash("sha256").update(token).digest("hex")
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 min
+    const expiresAt = new Date(Date.now() + expiresInMs)
 
     return { token, tokenHash, expiresAt }
 }

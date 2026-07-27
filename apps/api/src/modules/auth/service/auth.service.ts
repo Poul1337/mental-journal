@@ -14,7 +14,7 @@ import { UserStatus } from "../../../generated/prisma/enums";
 import { JwtService } from "@nestjs/jwt";
 import type { Response } from "express";
 import { SEND_VERIFICATION_EMAIL_PORT, SendVerificationEmailPort } from "../interfaces/send-verification-email.port";
-import { createEmailVerificationToken } from "../utils/create-email-verification-token.util";
+import { createRandomToken } from "../utils/create-random-token.util";
 import { ConfigService } from "@nestjs/config";
 import { VERIFY_EMAIL_PORT, VerifyEmailPort } from "../interfaces/verify-email.port";
 import { createHash } from "crypto";
@@ -25,6 +25,11 @@ import { VerifyEmailResponseDto } from "../dto/verify-email-response.dto";
 import { AccountNotVerifiedException } from "../exceptions/account-not-verified.exception";
 import { IssueEmailVerificationResult } from '../../../common/enums/issue-email.verification-result.enum';
 import { IssueEmailVerificationResponseDto } from '../dto/issue-email-verification-response.dto';
+import { SAVE_SESSION_PORT, SaveSessionPort } from '../interfaces/save-session.port';
+import { parseTtlMs } from '../utils/parse-ttl-ms.util';
+import { DELETE_SESSION_PORT, DeleteSessionPort } from '../interfaces/delete-session.port';
+import { DELETE_ALL_SESSIONS_PORT, DeleteAllSessionsPort } from '../interfaces/delete-all-sessions.port';
+import { LogoutResponseDto } from '../dto/logout-response.dto';
 
 const DUMMY_PASSWORD_HASH =
   '$2b$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012';
@@ -46,6 +51,12 @@ export class AuthService {
 
     private readonly frontEndUrl: string;
 
+    private readonly emailTtlMs: number;
+
+    private readonly sessionRefreshTtlMs: number;
+
+    private readonly accessTokenTtlMs: number;
+
     constructor(
         private readonly configService: ConfigService,
 
@@ -66,9 +77,21 @@ export class AuthService {
         private readonly verifyEmailPort: VerifyEmailPort,
 
         @Inject(ISSUE_EMAIL_VERIFICATION_PORT)
-        private readonly issueEmailVerificationPort: IssueEmailVerificationPort
+        private readonly issueEmailVerificationPort: IssueEmailVerificationPort,
+
+        @Inject(SAVE_SESSION_PORT)
+        private readonly saveSessionPort: SaveSessionPort,
+
+        @Inject(DELETE_SESSION_PORT)
+        private readonly deleteSessionPort: DeleteSessionPort,
+
+        @Inject(DELETE_ALL_SESSIONS_PORT)
+        private readonly deleteAllSessionsPort: DeleteAllSessionsPort
     ) {
         this.frontEndUrl = this.configService.getOrThrow<string>("FRONTEND_URL");
+        this.emailTtlMs = parseTtlMs(this.configService.getOrThrow<string>('EMAIL_TTL'), 'EMAIL_TTL');
+        this.sessionRefreshTtlMs = parseTtlMs(this.configService.getOrThrow<string>('SESSION_REFRESH_TTL'), 'SESSION_REFRESH_TTL');
+        this.accessTokenTtlMs = parseTtlMs(this.configService.getOrThrow<string>('ACCESS_TOKEN_TTL'), 'ACCESS_TOKEN_TTL');
     }
 
     async registerUser(dto: UserRegisterDto): Promise<UserRegisterResponseDto> {
@@ -76,7 +99,7 @@ export class AuthService {
         const passwordHash = await this.hashingService.hash(password.getValue());
         const email = dto.email.trim().toLowerCase();
         
-        const { token, tokenHash, expiresAt } = createEmailVerificationToken();
+        const { token, tokenHash, expiresAt } = createRandomToken(this.emailTtlMs);
         const verificationLink = `${this.frontEndUrl}/verify-email?token=${token}`
 
         const result = await this.registerUserPort.execute({
@@ -110,6 +133,17 @@ export class AuthService {
 
         if(!user.emailVerified) throw new AccountNotVerifiedException();        
 
+        const { token: refreshToken, tokenHash, expiresAt } = createRandomToken(this.sessionRefreshTtlMs)
+
+        await this.saveSessionPort.execute(user.id, tokenHash, expiresAt)
+
+        res.cookie('refresh_token', refreshToken, {
+            httpOnly: true,
+            path: '/v1/auth',
+            sameSite: 'lax',
+            maxAge: this.sessionRefreshTtlMs
+        })
+
         const accessToken = await this.jwtService.signAsync({
             sub: user.id,
             anonName: user.anonName
@@ -119,7 +153,7 @@ export class AuthService {
             httpOnly: true,
             sameSite: 'lax',
             path: "/",
-            maxAge: 15 * 60 * 1000,
+            maxAge: this.accessTokenTtlMs,
         })
 
         return { id: user.id, anonName: user.anonName }
@@ -141,7 +175,7 @@ export class AuthService {
 
     async issueEmailVerification(email: string): Promise<IssueEmailVerificationResponseDto> {
         const normalized = email.trim().toLowerCase();
-        const { token, tokenHash, expiresAt } = createEmailVerificationToken()
+        const { token, tokenHash, expiresAt } = createRandomToken(this.emailTtlMs)
         const verificationLink = `${this.frontEndUrl}/verify-email?token=${token}`
 
         const result = await this.issueEmailVerificationPort.execute({
@@ -163,4 +197,37 @@ export class AuthService {
         }
     }
 
+
+    async logoutUser(res: Response, refreshToken?: string): Promise<LogoutResponseDto> {
+        if(refreshToken) {
+            const tokenHash = createHash('sha256').update(refreshToken).digest('hex')
+            await this.deleteSessionPort.execute(tokenHash)
+        }
+
+        res.clearCookie('access_token', { 
+            path: '/',
+            sameSite: 'lax'
+        })
+        res.clearCookie('refresh_token', { 
+            path: '/v1/auth',
+            sameSite: 'lax'
+        })
+
+        return { message: "Logged out successfully" }
+    }
+
+    async logoutAll( res: Response, userId: string): Promise<LogoutResponseDto> {
+        await this.deleteAllSessionsPort.execute(userId)
+        
+        res.clearCookie('access_token', { 
+            path: '/',
+            sameSite: 'lax',
+        })
+        res.clearCookie('refresh_token', { 
+            path: '/v1/auth',
+            sameSite: 'lax'
+        })
+
+        return { message: "Logged out successfully" }
+    }
 }
