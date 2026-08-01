@@ -12,7 +12,8 @@
     "db:generate": "turbo run db:generate --filter=api",
     "db:migrate": "turbo run db:migrate --filter=api",
     "db:push": "turbo run db:push --filter=api",
-    "db:studio": "turbo run db:studio --filter=api"
+    "db:studio": "turbo run db:studio --filter=api",
+    "api:test": "turbo run test --filter=api"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

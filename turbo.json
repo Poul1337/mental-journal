@@ -4,7 +4,7 @@
   "globalEnv": ["DATABASE_URL"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "db:generate"],
+      "dependsOn": ["^build", "db:generate", "test"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [
         ".next/**",
@@ -38,6 +38,9 @@
     "db:studio": {
       "cache": false,
       "persistent": true
+    },
+    "test": {
+      "cache": false
     }
   }
 }
