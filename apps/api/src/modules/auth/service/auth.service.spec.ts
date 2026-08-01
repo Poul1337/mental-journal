@@ -21,6 +21,9 @@ import { AccountNotVerifiedException } from '../exceptions/account-not-verified.
 import { UserRegisterDto } from '../dto/user-register.dto';
 import { createHash } from 'crypto';
 import { VerifyEmailResult } from '../../../common/enums/verify-email-result.enum';
+import { VerificationTokenNotFoundException } from '../exceptions/verification-token-not-found.exception';
+import { VerificationTokenExpiredException } from '../exceptions/verification-token-expired.exception';
+import { UnauthorizedUserException } from '../exceptions/unauthorized-user.exception';
 
 const makeLoginDto = (overrides = {}) => ({
     email: 'test@test.pl',
@@ -39,7 +42,11 @@ const makeUser = (overrides = {}) => ({
 })
 
 
-const makeRes = () => ({ cookie: jest.fn() }) as unknown as Response;
+const makeRes = (withClear = false) =>
+    ({
+        cookie: jest.fn(),
+        ...(withClear ? { clearCookie: jest.fn() } : {}),
+    }) as unknown as Response;
 
 const makeRegisterDto = () => ({
     email: 'test@test.pl',
@@ -290,6 +297,66 @@ describe('AuthService', () => {
         expect(verifyEmailPort.execute).toHaveBeenCalledWith(tokenHash)
         expect(result).toEqual({ message: 'Email verified successfully' })
     })
-    it('should throw when NOT_FOUND')
-    it('should throw when EXPIRED')
+
+    it('should throw when NOT_FOUND', async () => {
+        const plainToken = "1234567890abcdefgh"
+        const tokenHash = createHash('sha256').update(plainToken).digest('hex');
+
+        verifyEmailPort.execute.mockResolvedValue(VerifyEmailResult.NOT_FOUND);
+
+        await expect(authService.verifyEmail(plainToken)).rejects.toThrow(
+            VerificationTokenNotFoundException,
+        );
+
+        expect(verifyEmailPort.execute).toHaveBeenCalledWith(tokenHash)
+    })
+
+    it('should throw when EXPIRED', async () => {
+        const plainToken = "1234567890abcdefgh"
+        const tokenHash = createHash('sha256').update(plainToken).digest('hex');
+
+        verifyEmailPort.execute.mockResolvedValue(VerifyEmailResult.EXPIRED);
+
+        await expect(authService.verifyEmail(plainToken)).rejects.toThrow(
+            VerificationTokenExpiredException
+        );
+
+        expect(verifyEmailPort.execute).toHaveBeenCalledWith(tokenHash)
+    })
+
+    //Refresh token tests
+    it('should throw when refresh token missing', async () => {
+        const res = makeRes(true)
+
+        await expect(
+            authService.refreshToken(res, undefined),
+        ).rejects.toThrow(UnauthorizedUserException);
+
+        expect(findByRefreshTokenHashPort.execute).not.toHaveBeenCalled();
+    })
+
+    it('should throw when session missing or expire', async () => {
+        const plainToken = "1234567890abcdefgh"
+        const tokenHash = createHash('sha256').update(plainToken).digest('hex')
+        const res = makeRes(true)
+
+        findByRefreshTokenHashPort.execute.mockResolvedValue(null)
+
+
+        await expect(
+            authService.refreshToken(res, plainToken),
+        ).rejects.toThrow(UnauthorizedUserException);
+
+        expect(findByRefreshTokenHashPort.execute).toHaveBeenCalledWith(tokenHash);
+        expect(res.clearCookie).toHaveBeenCalledWith('refresh_token', expect.objectContaining({ path: '/v1/auth' }),
+  );
+    })
+
+    it('should refresh tokens on valid session')
+
+    it('should delete session and clear cookies when refresh token provided')
+
+    it('should clear cookies even without refresh token')
+
+    it('logoutAll')
 })
