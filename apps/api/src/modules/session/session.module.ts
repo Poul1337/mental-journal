@@ -6,14 +6,17 @@ import { DELETE_SESSION_PORT } from "../auth/interfaces/delete-session.port";
 import { DeleteSessionAdapter } from "./adapter/delete-session.adapter";
 import { DELETE_ALL_SESSIONS_PORT } from "../auth/interfaces/delete-all-sessions.port";
 import { DeleteAllSessionsAdapter } from "./adapter/delete-all-sessions.adapter";
+import { FIND_BY_REFRESH_TOKEN_HASH_PORT } from "../auth/interfaces/find-by-refresh-token-hash.port";
+import { FindByRefreshTokenHashAdapter } from "./adapter/find-by-refresh-token-hash.adapter";
 
 @Module({
     providers: [
         SessionService,
         { provide: SAVE_SESSION_PORT, useClass: SaveSessionAdapter },
         { provide: DELETE_SESSION_PORT, useClass: DeleteSessionAdapter },
-        { provide: DELETE_ALL_SESSIONS_PORT, useClass: DeleteAllSessionsAdapter }
+        { provide: DELETE_ALL_SESSIONS_PORT, useClass: DeleteAllSessionsAdapter },
+        { provide: FIND_BY_REFRESH_TOKEN_HASH_PORT, useClass: FindByRefreshTokenHashAdapter }
     ],
-    exports: [SAVE_SESSION_PORT, DELETE_SESSION_PORT, DELETE_ALL_SESSIONS_PORT]
+    exports: [SAVE_SESSION_PORT, DELETE_SESSION_PORT, DELETE_ALL_SESSIONS_PORT, FIND_BY_REFRESH_TOKEN_HASH_PORT]
 })
 export class SessionModule {}

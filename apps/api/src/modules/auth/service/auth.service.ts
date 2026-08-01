@@ -30,6 +30,9 @@ import { parseTtlMs } from '../utils/parse-ttl-ms.util';
 import { DELETE_SESSION_PORT, DeleteSessionPort } from '../interfaces/delete-session.port';
 import { DELETE_ALL_SESSIONS_PORT, DeleteAllSessionsPort } from '../interfaces/delete-all-sessions.port';
 import { LogoutResponseDto } from '../dto/logout-response.dto';
+import { FIND_BY_REFRESH_TOKEN_HASH_PORT, FindByRefreshTokenHashPort } from '../interfaces/find-by-refresh-token-hash.port';
+import { UnauthorizedUserException } from '../exceptions/unauthorized-user.exception';
+import { RefreshTokenResultDto } from '../dto/refresh-token-result.dto';
 
 const DUMMY_PASSWORD_HASH =
   '$2b$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012';
@@ -86,7 +89,10 @@ export class AuthService {
         private readonly deleteSessionPort: DeleteSessionPort,
 
         @Inject(DELETE_ALL_SESSIONS_PORT)
-        private readonly deleteAllSessionsPort: DeleteAllSessionsPort
+        private readonly deleteAllSessionsPort: DeleteAllSessionsPort,
+
+        @Inject(FIND_BY_REFRESH_TOKEN_HASH_PORT)
+        private readonly findByRefreshTokenHashPort: FindByRefreshTokenHashPort
     ) {
         this.frontEndUrl = this.configService.getOrThrow<string>("FRONTEND_URL");
         this.emailTtlMs = parseTtlMs(this.configService.getOrThrow<string>('EMAIL_TTL'), 'EMAIL_TTL');
@@ -229,5 +235,54 @@ export class AuthService {
         })
 
         return { message: "Logged out successfully" }
+    }
+
+    async refreshToken(res: Response, refreshToken?: string): Promise<RefreshTokenResultDto> {
+        if(!refreshToken) throw new UnauthorizedUserException()
+
+        const tokenHash = createHash('sha256').update(refreshToken).digest('hex')
+        const session = await this.findByRefreshTokenHashPort.execute(tokenHash)
+
+        if(!session || session.expiresAt.getTime() < Date.now()) {
+            res.clearCookie('refresh_token', {
+                path: '/v1/auth',
+                sameSite: 'lax'
+            })
+            throw new UnauthorizedUserException()
+        }
+
+        if(session.user.status !== UserStatus.ACTIVE) {
+            res.clearCookie('refresh_token', {
+                path: '/v1/auth',
+                sameSite: 'lax'
+            })
+            throw new AccountNotAllowedException()
+        }
+
+        const { token: newRefresh, tokenHash: newHash, expiresAt } = createRandomToken(this.sessionRefreshTtlMs)
+
+        await this.deleteSessionPort.execute(tokenHash)
+        await this.saveSessionPort.execute(session.userId, newHash, expiresAt)
+
+        res.cookie('refresh_token', newRefresh, {
+            httpOnly: true,
+            path: '/v1/auth',
+            sameSite: 'lax',
+            maxAge: this.sessionRefreshTtlMs
+        })
+
+        const accessToken = await this.jwtService.signAsync({
+            sub: session.userId,
+            anonName: session.user.anonName
+        })
+
+        res.cookie('access_token', accessToken , {
+            httpOnly: true,
+            sameSite: 'lax',
+            path: "/",
+            maxAge: this.accessTokenTtlMs,
+        })
+
+        return { id: session.userId, anonName: session.user.anonName }
     }
 }

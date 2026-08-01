@@ -13,6 +13,7 @@ import { VerifyEmailResponseDto } from './dto/verify-email-response.dto';
 import { IssueEmailVerificationResponseDto } from './dto/issue-email-verification-response.dto';
 import { IssueEmailVerificationDto } from './dto/issue-email-verification.dto';
 import { LogoutResponseDto } from './dto/logout-response.dto';
+import { RefreshTokenResultDto } from './dto/refresh-token-result.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -77,5 +78,13 @@ export class AuthController {
         return this.authService.logoutAll(res, userId)
     }
 
-    //TODO: refresh
+    @Post('refresh')
+    @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { limit: 10, ttl: 60_000 } })
+    refresh(
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response
+    ): Promise<RefreshTokenResultDto> {
+        return this.authService.refreshToken(res, req.cookies?.["refresh_token"])
+    }
 }

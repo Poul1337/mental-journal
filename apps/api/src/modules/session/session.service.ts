@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import { FindByRefreshTokenHashCommand } from "./interface/find-by-refresh-token-hash.command";
 
 @Injectable()
 export class SessionService {
@@ -30,6 +31,25 @@ export class SessionService {
         await this.prisma.session.deleteMany({
             where: {
                 userId
+            }
+        })
+    }
+
+    async findByRefreshTokenHash(refreshTokenHash: string): Promise<FindByRefreshTokenHashCommand | null> {
+        return await this.prisma.session.findUnique({
+            where: { refreshTokenHash },
+            select: {
+                id: true,
+                userId: true,
+                expiresAt: true,
+                user: {
+                    select: { 
+                        id: true,
+                        anonName: true,
+                        status: true,
+                        emailVerified: true
+                    }
+                }
             }
         })
     }
