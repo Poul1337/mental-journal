@@ -66,11 +66,13 @@ model User {
 }
 
 model Session {
-  id               String   @id @default(uuid())
-  userId           String   @map("user_id")
-  refreshTokenHash String   @unique @map("refresh_token_hash")
-  expiresAt        DateTime @map("expires_at")
-  createdAt        DateTime @default(now()) @map("created_at")
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+
+  refreshTokenHash String @unique @map("refresh_token_hash")
+
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -81,7 +83,6 @@ model JournalEntry {
   id     String @id @default(uuid())
   userId String @map("user_id")
 
-  title   String
   content String
   mood    Int?
   tags    String[] @default([])
@@ -91,6 +92,7 @@ model JournalEntry {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime @map("deleted_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

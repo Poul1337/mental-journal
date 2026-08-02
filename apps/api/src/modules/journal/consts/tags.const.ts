@@ -1,0 +1,67 @@
+export const JOURNAL_TAG_CATALOG = {
+    emotions: [
+      'sadness',
+      'anxiety',
+      'anger',
+      'loneliness',
+      'stress',
+      'unease',
+      'overwhelm',
+      'helplessness',
+      'guilt',
+      'shame',
+      'hope',
+      'gratitude',
+      'calm',
+      'joy',
+    ],
+    relations: [
+      'family',
+      'relationship',
+      'breakup',
+      'friendship',
+      'conflict',
+      'relational_loneliness',
+      'parenting',
+    ],
+    daily_life: [
+      'work',
+      'school',
+      'studies',
+      'finances',
+      'health',
+      'sleep',
+      'burnout',
+      'change',
+      'moving',
+    ],
+    growth: [
+      'therapy',
+      'self_development',
+      'habits',
+      'goals',
+      'motivation',
+      'meditation',
+      'mindfulness',
+    ],
+    support: [
+      'need_support',
+      'want_to_vent',
+      'looking_for_advice',
+      'want_to_be_heard',
+      'success',
+      'small_step',
+    ],
+    journal: [
+      'reflection',
+      'journal_gratitude',
+      'daily_journal',
+      'thoughts',
+      'weekly_goals',
+      'evening_summary',
+    ],
+  } as const
+  export type JournalTagCategory = keyof typeof JOURNAL_TAG_CATALOG
+  export type JournalTag =
+    (typeof JOURNAL_TAG_CATALOG)[JournalTagCategory][number]
+  export const ALL_JOURNAL_TAGS = Object.values(JOURNAL_TAG_CATALOG).flat()

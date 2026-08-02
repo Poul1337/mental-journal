@@ -8,4 +8,9 @@ export class JournalService {
         private readonly prisma: PrismaService
     ) {}
     
+    //TODO: myEntriesList method
+    //TODO: singleEntry method
+    //TODO: createEntry method
+    //TODO: editEntry method
+    //TODO: deleteEntry method
 }
