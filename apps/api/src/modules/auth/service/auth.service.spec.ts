@@ -24,6 +24,7 @@ import { VerifyEmailResult } from '../../../common/enums/verify-email-result.enu
 import { VerificationTokenNotFoundException } from '../exceptions/verification-token-not-found.exception';
 import { VerificationTokenExpiredException } from '../exceptions/verification-token-expired.exception';
 import { UnauthorizedUserException } from '../exceptions/unauthorized-user.exception';
+import { createRandomToken } from '../utils/create-random-token.util';
 
 const makeLoginDto = (overrides = {}) => ({
     email: 'test@test.pl',
@@ -352,11 +353,100 @@ describe('AuthService', () => {
   );
     })
 
-    it('should refresh tokens on valid session')
+    it('should refresh tokens on valid session', async () => {
+        const refreshToken = '1234567890abcdefgh';
+        const oldTokenHash = createHash('sha256').update(refreshToken).digest('hex');
+        const res = makeRes(true);
 
-    it('should delete session and clear cookies when refresh token provided')
+        findByRefreshTokenHashPort.execute.mockResolvedValue({
+            id: 'session-1',
+            userId: 'user-1',
+            expiresAt: new Date(Date.now() + 60_000),
+            user: {
+              id: 'user-1',
+              anonName: 'TestUser',
+              status: UserStatus.ACTIVE,
+              emailVerified: true,
+            },
+        });
 
-    it('should clear cookies even without refresh token')
+        deleteSessionPort.execute.mockResolvedValue(undefined);
+        saveSessionPort.execute.mockResolvedValue(undefined);
+        jwtService.signAsync.mockResolvedValue('new-access-token');
 
-    it('logoutAll')
+        const result = await authService.refreshToken(res, refreshToken);
+
+        expect(findByRefreshTokenHashPort.execute).toHaveBeenCalledWith(oldTokenHash);
+        expect(deleteSessionPort.execute).toHaveBeenCalledWith(oldTokenHash);
+        expect(saveSessionPort.execute).toHaveBeenCalledWith(
+            'user-1',
+            expect.any(String),
+            expect.any(Date),
+        );
+        expect(jwtService.signAsync).toHaveBeenCalled();
+        expect(res.cookie).toHaveBeenCalledWith('refresh_token', expect.any(String), expect.any(Object));
+        expect(res.cookie).toHaveBeenCalledWith('access_token', 'new-access-token', expect.any(Object));
+        expect(result).toEqual({ id: 'user-1', anonName: 'TestUser' });
+    })
+
+    //logout tests
+    it('should delete session and clear cookies when refresh token provided', async () => {
+        const refreshToken = '1234567890abcdefgh';
+        const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
+        const res = makeRes(true);
+
+        deleteSessionPort.execute.mockResolvedValue(undefined);
+
+        const result = await authService.logoutUser(res, refreshToken);
+
+        expect(deleteSessionPort.execute).toHaveBeenCalledWith(tokenHash);
+        expect(res.clearCookie).toHaveBeenCalledWith(
+            'access_token',
+            expect.objectContaining({ path: '/' }),
+        );
+        expect(res.clearCookie).toHaveBeenCalledWith(
+            'refresh_token',
+            expect.objectContaining({ path: '/v1/auth' }),
+        );
+        expect(result).toEqual({ message: 'Logged out successfully' });
+    })
+
+    it('should clear cookies even without refresh token', async () => {
+        const res = makeRes(true);
+
+        deleteSessionPort.execute.mockResolvedValue(undefined);
+
+        const result = await authService.logoutUser(res, undefined);
+
+        expect(deleteSessionPort.execute).not.toHaveBeenCalled();
+        expect(res.clearCookie).toHaveBeenCalledWith(
+            'access_token',
+            expect.objectContaining({ path: '/' }),
+        );
+        expect(res.clearCookie).toHaveBeenCalledWith(
+            'refresh_token',
+            expect.objectContaining({ path: '/v1/auth' }),
+        );
+        expect(result).toEqual({ message: 'Logged out successfully' });
+    })
+
+    //logout all tests
+    it('should logout all', async () => {
+        const res = makeRes(true);
+        
+        deleteAllSessionsPort.execute.mockResolvedValue(undefined)
+
+        const result = await authService.logoutAll(res, 'user-1')
+
+        expect(deleteAllSessionsPort.execute).toHaveBeenCalledWith('user-1')
+        expect(res.clearCookie).toHaveBeenCalledWith(
+            'access_token',
+            expect.objectContaining({ path: '/' }),
+        );
+        expect(res.clearCookie).toHaveBeenCalledWith(
+            'refresh_token',
+            expect.objectContaining({ path: '/v1/auth' }),
+        );
+        expect(result).toEqual({ message: 'Logged out successfully' });
+    })
 })
