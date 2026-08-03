@@ -1,8 +1,10 @@
-import { HttpStatus } from "@nestjs/common";
-import { AppException } from "../../../common/exception/app.exception";
+import { HttpStatus } from '@nestjs/common';
+
+import { ErrorPath } from '../../../common/const/error-path.const';
+import { AppException } from '../../../common/exceptions/app.exception';
 
 export class VerificationTokenExpiredException extends AppException {
-    constructor() {
-        super("auth: verified email expired", HttpStatus.BAD_GATEWAY)
-    }
+  constructor() {
+    super(`${ErrorPath.AUTH}: verified email expired`, HttpStatus.BAD_GATEWAY);
+  }
 }

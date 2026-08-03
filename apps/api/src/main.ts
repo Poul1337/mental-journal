@@ -1,13 +1,15 @@
 import 'dotenv/config';
+
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
-import { HttpExceptionFilter } from './common/exception/filters/http-exception.filter';
-import { DomainExceptionFilter } from './common/exception/filters/domain-exception.filter';
-import { CatchAllExceptionFilter } from './common/exception/filters/catch-all-exception.filter';
-import { mapValidationErrors } from './common/exception/utlis/validation-errors.util';
+
+import { AppModule } from './app.module';
+import { CatchAllExceptionFilter } from './common/exceptions/filters/catch-all-exception.filter';
+import { DomainExceptionFilter } from './common/exceptions/filters/domain-exception.filter';
+import { HttpExceptionFilter } from './common/exceptions/filters/http-exception.filter';
+import { mapValidationErrors } from './common/exceptions/utlis/validation-errors.util';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,28 +17,28 @@ async function bootstrap() {
   app.useGlobalFilters(
     new CatchAllExceptionFilter(),
     new HttpExceptionFilter(),
-    new DomainExceptionFilter()
-  )
+    new DomainExceptionFilter(),
+  );
 
   app.use(cookieParser());
 
   app.enableCors({
-    origin: process.env.FRONTEND_URL ?? "http://localhost:3000",
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
     credentials: true,
-  })
+  });
 
   app.setGlobalPrefix('v1');
-  
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-      exceptionFactory: (errors) => 
+      exceptionFactory: (errors) =>
         new BadRequestException({
-          message: "Validation failed",
-          fieldErrors: mapValidationErrors(errors)
-        })
+          message: 'Validation failed',
+          fieldErrors: mapValidationErrors(errors),
+        }),
     }),
   );
 

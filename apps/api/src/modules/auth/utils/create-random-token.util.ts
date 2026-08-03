@@ -1,9 +1,9 @@
-import { randomBytes, createHash } from "crypto";
+import { createHash, randomBytes } from 'crypto';
 
 export function createRandomToken(expiresInMs: number) {
-    const token = randomBytes(32).toString("hex");
-    const tokenHash = createHash("sha256").update(token).digest("hex")
-    const expiresAt = new Date(Date.now() + expiresInMs)
+  const token = randomBytes(32).toString('hex');
+  const tokenHash = createHash('sha256').update(token).digest('hex');
+  const expiresAt = new Date(Date.now() + expiresInMs);
 
-    return { token, tokenHash, expiresAt }
+  return { token, tokenHash, expiresAt };
 }

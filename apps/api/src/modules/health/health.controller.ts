@@ -1,24 +1,25 @@
-import { Controller, Get } from "@nestjs/common";
-import { HealthCheck, HealthCheckService } from "@nestjs/terminus";
-import { PrismaService } from "../../prisma/prisma.service";
-import { SkipThrottle } from "@nestjs/throttler";
+import { Controller, Get } from '@nestjs/common';
+import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
+import { SkipThrottle } from '@nestjs/throttler';
+
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Controller('health')
 export class HealthController {
-    constructor(
-        private readonly health: HealthCheckService,
-        private readonly prisma: PrismaService
-    ) {}
+  constructor(
+    private readonly health: HealthCheckService,
+    private readonly prisma: PrismaService,
+  ) {}
 
-    @SkipThrottle()
-    @Get()
-    @HealthCheck()
-    async check() {
-        return this.health.check([
-            async () =>  { 
-                await this.prisma.$queryRaw`SELECT 1`;
-                return { db: { status: 'up' }};
-            }
-        ])
-    }
+  @SkipThrottle()
+  @Get()
+  @HealthCheck()
+  async check() {
+    return this.health.check([
+      async () => {
+        await this.prisma.$queryRaw`SELECT 1`;
+        return { db: { status: 'up' } };
+      },
+    ]);
+  }
 }

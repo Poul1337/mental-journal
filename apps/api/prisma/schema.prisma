@@ -6,7 +6,6 @@
 enum UserStatus {
   ACTIVE
   BANNED
-  SHADOWBANNED
   INACTIVE
 }
 
@@ -54,7 +53,6 @@ model User {
 
   bannedAt     DateTime? @map("banned_at")
   bannedReason String?   @map("banned_reason")
-  shadowbanned Boolean   @default(false)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

@@ -1,6 +1,7 @@
-import globals from "globals";
-import tseslint from "typescript-eslint";
-import { config as baseConfig } from "./base.js";
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+
+import { config as baseConfig } from './base.js';
 
 /**
  * ESLint configuration for NestJS applications.
@@ -8,28 +9,28 @@ import { config as baseConfig } from "./base.js";
  * @type {import("eslint").Linter.Config[]}
  */
 export const nestJsConfig = [
-  ...baseConfig,
-  {
-    ignores: ["eslint.config.mjs"],
-  },
-  ...tseslint.configs.recommendedTypeChecked,
-  {
-    languageOptions: {
-      globals: {
-        ...globals.node,
-        ...globals.jest,
-      },
-      sourceType: "commonjs",
-      parserOptions: {
-        projectService: true,
-      },
-    },
-  },
-  {
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-floating-promises": "warn",
-      "@typescript-eslint/no-unsafe-argument": "warn",
-    },
-  },
+	...baseConfig,
+	{
+		ignores: ['eslint.config.mjs'],
+	},
+	...tseslint.configs.recommendedTypeChecked,
+	{
+		languageOptions: {
+			globals: {
+				...globals.node,
+				...globals.jest,
+			},
+			sourceType: 'commonjs',
+			parserOptions: {
+				projectService: true,
+			},
+		},
+	},
+	{
+		rules: {
+			'@typescript-eslint/no-explicit-any': 'off',
+			'@typescript-eslint/no-floating-promises': 'warn',
+			'@typescript-eslint/no-unsafe-argument': 'warn',
+		},
+	},
 ];

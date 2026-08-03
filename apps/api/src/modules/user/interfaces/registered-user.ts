@@ -1,4 +1,4 @@
 export interface RegisteredUser {
-    id: string;
-    anonName: string;
+  id: string;
+  anonName: string;
 }

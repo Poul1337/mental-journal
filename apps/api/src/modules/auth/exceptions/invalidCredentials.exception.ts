@@ -1,8 +1,13 @@
-import { HttpStatus } from "@nestjs/common";
-import { AppException } from "../../../common/exception/app.exception";
+import { HttpStatus } from '@nestjs/common';
+
+import { ErrorPath } from '../../../common/const/error-path.const';
+import { AppException } from '../../../common/exceptions/app.exception';
 
 export class InvalidCredentialsException extends AppException {
-    constructor() {
-        super("auth: Invalid email or password", HttpStatus.UNAUTHORIZED);
-    }
+  constructor() {
+    super(
+      `${ErrorPath.AUTH}: Invalid email or password`,
+      HttpStatus.UNAUTHORIZED,
+    );
+  }
 }

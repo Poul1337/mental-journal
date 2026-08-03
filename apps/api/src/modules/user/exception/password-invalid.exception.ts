@@ -1,7 +1,10 @@
-import { DomainException } from "../../../common/exception/domain.exception";
+import { ErrorPath } from '../../../common/const/error-path.const';
+import { DomainException } from '../../../common/exceptions/domain.exception';
 
 export class PasswordInvalidException extends DomainException {
-    constructor() {
-        super("password: must be 8–72 chars with upper, lower, digit and special char")
-    }
+  constructor() {
+    super(
+      `${ErrorPath.USER}: must be 8–72 chars with upper, lower, digit and special char`,
+    );
+  }
 }

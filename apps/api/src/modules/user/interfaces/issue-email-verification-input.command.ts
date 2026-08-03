@@ -1,5 +1,5 @@
 export interface IssueEmailVerificationInputCommand {
-    email: string,
-    tokenHash: string,
-    expiresAt: Date
+  email: string;
+  tokenHash: string;
+  expiresAt: Date;
 }

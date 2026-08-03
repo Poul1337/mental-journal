@@ -1,4 +1,5 @@
 import { ValidationError } from 'class-validator';
+
 import { FieldError } from '../interfaces/error-response';
 
 export function mapValidationErrors(errors: ValidationError[]): FieldError[] {
@@ -13,7 +14,7 @@ export function mapValidationErrors(errors: ValidationError[]): FieldError[] {
     const nested = error.children?.length
       ? mapValidationErrors(error.children)
       : [];
-    
+
     return [...current, ...nested];
   });
 }
