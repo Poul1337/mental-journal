@@ -8,8 +8,8 @@ import { MailModule } from '../mail/mail.module';
 import { SessionModule } from '../session/session.module';
 import { UserModule } from '../user/user.module';
 import { AuthController } from './auth.controller';
-import { AuthService } from './service/auth.service';
-import { HashingService } from './service/hashing.service';
+import { AuthService } from './services/auth.service';
+import { HashingService } from './services/hashing.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 const jwtModuleFactory = (config: ConfigService) => ({

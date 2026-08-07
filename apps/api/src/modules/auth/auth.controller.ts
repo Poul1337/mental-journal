@@ -19,16 +19,16 @@ import {
   CurrentUser,
 } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { IssueEmailVerificationDto } from './dto/issue-email-verification.dto';
-import { IssueEmailVerificationResponseDto } from './dto/issue-email-verification-response.dto';
-import { LogoutResponseDto } from './dto/logout-response.dto';
-import { RefreshTokenResultDto } from './dto/refresh-token-result.dto';
-import { UserLoginDto } from './dto/user-login.dto';
-import { UserLoginResponseDto } from './dto/user-login-response.dto';
-import { UserRegisterDto } from './dto/user-register.dto';
-import { UserRegisterResponseDto } from './dto/user-register-response.dto';
-import { VerifyEmailResponseDto } from './dto/verify-email-response.dto';
-import { AuthService } from './service/auth.service';
+import { IssueEmailVerificationDto } from './dtos/issue-email-verification.dto';
+import { IssueEmailVerificationResponseDto } from './dtos/issue-email-verification-response.dto';
+import { LogoutResponseDto } from './dtos/logout-response.dto';
+import { RefreshTokenResultDto } from './dtos/refresh-token-result.dto';
+import { UserLoginDto } from './dtos/user-login.dto';
+import { UserLoginResponseDto } from './dtos/user-login-response.dto';
+import { UserRegisterDto } from './dtos/user-register.dto';
+import { UserRegisterResponseDto } from './dtos/user-register-response.dto';
+import { VerifyEmailResponseDto } from './dtos/verify-email-response.dto';
+import { AuthService } from './services/auth.service';
 
 @Controller('auth')
 export class AuthController {

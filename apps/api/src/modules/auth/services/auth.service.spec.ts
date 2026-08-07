@@ -8,8 +8,8 @@ import { VerifyEmailResult } from '../../../common/enums/verify-email-result.enu
 import { AccountNotAllowedException } from '../../../common/exceptions/custom/account-not-allowed.exception';
 import { AccountNotVerifiedException } from '../../../common/exceptions/custom/account-not-verified.exception';
 import { UserStatus } from '../../../generated/prisma/enums';
-import { UserLoginDto } from '../dto/user-login.dto';
-import { UserRegisterDto } from '../dto/user-register.dto';
+import { UserLoginDto } from '../dtos/user-login.dto';
+import { UserRegisterDto } from '../dtos/user-register.dto';
 import { InvalidCredentialsException } from '../exceptions/invalidCredentials.exception';
 import { UnauthorizedUserException } from '../exceptions/unauthorized-user.exception';
 import { VerificationTokenExpiredException } from '../exceptions/verification-token-expired.exception';

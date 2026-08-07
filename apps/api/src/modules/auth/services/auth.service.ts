@@ -10,14 +10,14 @@ import { VerifyEmailResult } from '../../../common/enums/verify-email-result.enu
 import { AccountNotAllowedException } from '../../../common/exceptions/custom/account-not-allowed.exception';
 import { assertAccountCanAct } from '../../../common/utils/assert-account-can-act.util';
 import { UserStatus } from '../../../generated/prisma/enums';
-import { IssueEmailVerificationResponseDto } from '../dto/issue-email-verification-response.dto';
-import { LogoutResponseDto } from '../dto/logout-response.dto';
-import { RefreshTokenResultDto } from '../dto/refresh-token-result.dto';
-import { UserLoginDto } from '../dto/user-login.dto';
-import { UserLoginResponseDto } from '../dto/user-login-response.dto';
-import { UserRegisterDto } from '../dto/user-register.dto';
-import { UserRegisterResponseDto } from '../dto/user-register-response.dto';
-import { VerifyEmailResponseDto } from '../dto/verify-email-response.dto';
+import { IssueEmailVerificationResponseDto } from '../dtos/issue-email-verification-response.dto';
+import { LogoutResponseDto } from '../dtos/logout-response.dto';
+import { RefreshTokenResultDto } from '../dtos/refresh-token-result.dto';
+import { UserLoginDto } from '../dtos/user-login.dto';
+import { UserLoginResponseDto } from '../dtos/user-login-response.dto';
+import { UserRegisterDto } from '../dtos/user-register.dto';
+import { UserRegisterResponseDto } from '../dtos/user-register-response.dto';
+import { VerifyEmailResponseDto } from '../dtos/verify-email-response.dto';
 import { InvalidCredentialsException } from '../exceptions/invalidCredentials.exception';
 import { UnauthorizedUserException } from '../exceptions/unauthorized-user.exception';
 import { VerificationTokenExpiredException } from '../exceptions/verification-token-expired.exception';
@@ -60,7 +60,7 @@ import { Password } from '../value-objects/password.vo';
 import {
   ISSUE_EMAIL_VERIFICATION_PORT,
   IssueEmailVerificationPort,
-} from './../interfaces/issue-email-verification.port';
+} from '../interfaces/issue-email-verification.port';
 import { HashingService } from './hashing.service';
 
 const DUMMY_PASSWORD_HASH =
