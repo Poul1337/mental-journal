@@ -7,11 +7,11 @@ import { Response } from 'express';
 import { VerifyEmailResult } from '../../../common/enums/verify-email-result.enum';
 import { AccountNotAllowedException } from '../../../common/exceptions/custom/account-not-allowed.exception';
 import { AccountNotVerifiedException } from '../../../common/exceptions/custom/account-not-verified.exception';
+import { UnauthorizedUserException } from '../../../common/exceptions/custom/unauthorized-user.exception';
 import { UserStatus } from '../../../generated/prisma/enums';
-import { UserLoginDto } from '../dtos/user-login.dto';
-import { UserRegisterDto } from '../dtos/user-register.dto';
-import { InvalidCredentialsException } from '../exceptions/invalidCredentials.exception';
-import { UnauthorizedUserException } from '../exceptions/unauthorized-user.exception';
+import { LoginDto } from '../dtos/login.dto';
+import { RegisterDto } from '../dtos/register.dto';
+import { InvalidCredentialsException } from '../exceptions/invalid-credentials.exception';
 import { VerificationTokenExpiredException } from '../exceptions/verification-token-expired.exception';
 import { VerificationTokenNotFoundException } from '../exceptions/verification-token-not-found.exception';
 import { REGISTER_USER_PORT } from '../interfaces/create-user.port';
@@ -126,7 +126,7 @@ describe('AuthService', () => {
 
     const res = makeRes();
 
-    const result = await authService.loginUser(loginDto as UserLoginDto, res);
+    const result = await authService.login(loginDto as LoginDto, res);
 
     expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
     expect(hashingService.compare).toHaveBeenCalledWith(
@@ -159,9 +159,9 @@ describe('AuthService', () => {
 
     const res = makeRes();
 
-    await expect(
-      authService.loginUser(loginDto as UserLoginDto, res),
-    ).rejects.toThrow(InvalidCredentialsException);
+    await expect(authService.login(loginDto as LoginDto, res)).rejects.toThrow(
+      InvalidCredentialsException,
+    );
 
     expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
     expect(saveSessionPort.execute).not.toHaveBeenCalled();
@@ -178,9 +178,9 @@ describe('AuthService', () => {
 
     const res = makeRes();
 
-    await expect(
-      authService.loginUser(loginDto as UserLoginDto, res),
-    ).rejects.toThrow(InvalidCredentialsException);
+    await expect(authService.login(loginDto as LoginDto, res)).rejects.toThrow(
+      InvalidCredentialsException,
+    );
 
     expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
     expect(hashingService.compare).toHaveBeenCalledWith(
@@ -202,9 +202,9 @@ describe('AuthService', () => {
 
     const res = makeRes();
 
-    await expect(
-      authService.loginUser(loginDto as UserLoginDto, res),
-    ).rejects.toThrow(AccountNotAllowedException);
+    await expect(authService.login(loginDto as LoginDto, res)).rejects.toThrow(
+      AccountNotAllowedException,
+    );
 
     expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
     expect(hashingService.compare).toHaveBeenCalledWith(
@@ -225,9 +225,9 @@ describe('AuthService', () => {
 
     const res = makeRes();
 
-    await expect(
-      authService.loginUser(loginDto as UserLoginDto, res),
-    ).rejects.toThrow(AccountNotAllowedException);
+    await expect(authService.login(loginDto as LoginDto, res)).rejects.toThrow(
+      AccountNotAllowedException,
+    );
 
     expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
     expect(hashingService.compare).toHaveBeenCalledWith(
@@ -249,9 +249,9 @@ describe('AuthService', () => {
 
     const res = makeRes();
 
-    await expect(
-      authService.loginUser(loginDto as UserLoginDto, res),
-    ).rejects.toThrow(AccountNotVerifiedException);
+    await expect(authService.login(loginDto as LoginDto, res)).rejects.toThrow(
+      AccountNotVerifiedException,
+    );
 
     expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
     expect(hashingService.compare).toHaveBeenCalledWith(
@@ -274,9 +274,7 @@ describe('AuthService', () => {
     });
     sendVerificationEmailPort.execute.mockResolvedValue(undefined);
 
-    const result = await authService.registerUser(
-      registerDto as UserRegisterDto,
-    );
+    const result = await authService.register(registerDto as RegisterDto);
 
     expect(hashingService.hash).toHaveBeenCalledWith(registerDto.password);
     expect(registerUserPort.execute).toHaveBeenCalledWith(
@@ -305,9 +303,7 @@ describe('AuthService', () => {
       new Error('mail failed'),
     );
 
-    const result = await authService.registerUser(
-      registerDto as UserRegisterDto,
-    );
+    const result = await authService.register(registerDto as RegisterDto);
 
     expect(hashingService.hash).toHaveBeenCalledWith(registerDto.password);
     expect(registerUserPort.execute).toHaveBeenCalled();
@@ -358,7 +354,7 @@ describe('AuthService', () => {
   it('should throw when refresh token missing', async () => {
     const res = makeRes(true);
 
-    await expect(authService.refreshToken(res, undefined)).rejects.toThrow(
+    await expect(authService.refresh(res, undefined)).rejects.toThrow(
       UnauthorizedUserException,
     );
 
@@ -372,7 +368,7 @@ describe('AuthService', () => {
 
     findByRefreshTokenHashPort.execute.mockResolvedValue(null);
 
-    await expect(authService.refreshToken(res, plainToken)).rejects.toThrow(
+    await expect(authService.refresh(res, plainToken)).rejects.toThrow(
       UnauthorizedUserException,
     );
 
@@ -406,7 +402,7 @@ describe('AuthService', () => {
     saveSessionPort.execute.mockResolvedValue(undefined);
     jwtService.signAsync.mockResolvedValue('new-access-token');
 
-    const result = await authService.refreshToken(res, refreshToken);
+    const result = await authService.refresh(res, refreshToken);
 
     expect(findByRefreshTokenHashPort.execute).toHaveBeenCalledWith(
       oldTokenHash,
@@ -439,7 +435,7 @@ describe('AuthService', () => {
 
     deleteSessionPort.execute.mockResolvedValue(undefined);
 
-    const result = await authService.logoutUser(res, refreshToken);
+    const result = await authService.logout(res, refreshToken);
 
     expect(deleteSessionPort.execute).toHaveBeenCalledWith(tokenHash);
     expect(res.clearCookie).toHaveBeenCalledWith(
@@ -458,7 +454,7 @@ describe('AuthService', () => {
 
     deleteSessionPort.execute.mockResolvedValue(undefined);
 
-    const result = await authService.logoutUser(res, undefined);
+    const result = await authService.logout(res, undefined);
 
     expect(deleteSessionPort.execute).not.toHaveBeenCalled();
     expect(res.clearCookie).toHaveBeenCalledWith(

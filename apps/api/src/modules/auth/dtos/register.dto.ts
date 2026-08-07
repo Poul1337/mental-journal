@@ -19,7 +19,7 @@ import {
   PASSWORD_REGEX,
 } from '../value-objects/password.vo';
 
-export class UserRegisterDto {
+export class RegisterDto {
   @ApiProperty({ example: 'user@example.com' })
   @IsEmail()
   email!: string;

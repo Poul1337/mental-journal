@@ -83,4 +83,4 @@ export class JournalController {
   }
 }
 
-//TODO: REDIS CACHE
+//TODO: Figure out if is needed to implement java spring boot locations e.g URI location = URI.create("/users/" + user.id());

@@ -180,3 +180,5 @@ export class JournalService {
     return existing;
   }
 }
+
+//TODO: Redis cache

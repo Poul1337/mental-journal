@@ -21,12 +21,13 @@ import {
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { IssueEmailVerificationDto } from './dtos/issue-email-verification.dto';
 import { IssueEmailVerificationResponseDto } from './dtos/issue-email-verification-response.dto';
+import { LoginDto } from './dtos/login.dto';
+import { LoginResponseDto } from './dtos/login-response.dto';
 import { LogoutResponseDto } from './dtos/logout-response.dto';
-import { RefreshTokenResultDto } from './dtos/refresh-token-result.dto';
-import { UserLoginDto } from './dtos/user-login.dto';
-import { UserLoginResponseDto } from './dtos/user-login-response.dto';
-import { UserRegisterDto } from './dtos/user-register.dto';
-import { UserRegisterResponseDto } from './dtos/user-register-response.dto';
+import { RefreshResponseDto } from './dtos/refresh-response.dto';
+import { RegisterDto } from './dtos/register.dto';
+import { RegisterResponseDto } from './dtos/register-response.dto';
+import { VerifyEmailQueryDto } from './dtos/verify-email-query.dto';
 import { VerifyEmailResponseDto } from './dtos/verify-email-response.dto';
 import { AuthService } from './services/auth.service';
 
@@ -34,27 +35,29 @@ import { AuthService } from './services/auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiCreatedResponse({ type: UserRegisterResponseDto })
+  @ApiCreatedResponse({ type: RegisterResponseDto })
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  registerUser(@Body() dto: UserRegisterDto): Promise<UserRegisterResponseDto> {
-    return this.authService.registerUser(dto);
+  registerUser(@Body() dto: RegisterDto): Promise<RegisterResponseDto> {
+    return this.authService.register(dto);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(
-    @Body() dto: UserLoginDto,
+    @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<UserLoginResponseDto> {
-    return this.authService.loginUser(dto, res);
+  ): Promise<LoginResponseDto> {
+    return this.authService.login(dto, res);
   }
 
   @Get('verify-email')
   @HttpCode(HttpStatus.OK)
-  verifyEmail(@Query('token') token: string): Promise<VerifyEmailResponseDto> {
-    return this.authService.verifyEmail(token);
+  verifyEmail(
+    @Query() dto: VerifyEmailQueryDto,
+  ): Promise<VerifyEmailResponseDto> {
+    return this.authService.verifyEmail(dto.token);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -79,7 +82,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<LogoutResponseDto> {
     const refreshToken = req.cookies?.['refresh_token'];
-    return this.authService.logoutUser(res, refreshToken);
+    return this.authService.logout(res, refreshToken);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -99,7 +102,7 @@ export class AuthController {
   refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<RefreshTokenResultDto> {
-    return this.authService.refreshToken(res, req.cookies?.['refresh_token']);
+  ): Promise<RefreshResponseDto> {
+    return this.authService.refresh(res, req.cookies?.['refresh_token']);
   }
 }

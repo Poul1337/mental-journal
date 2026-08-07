@@ -8,18 +8,18 @@ import { ErrorPath } from '../../../common/const/error-path.const';
 import { IssueEmailVerificationResult } from '../../../common/enums/issue-email.verification-result.enum';
 import { VerifyEmailResult } from '../../../common/enums/verify-email-result.enum';
 import { AccountNotAllowedException } from '../../../common/exceptions/custom/account-not-allowed.exception';
+import { UnauthorizedUserException } from '../../../common/exceptions/custom/unauthorized-user.exception';
 import { assertAccountCanAct } from '../../../common/utils/assert-account-can-act.util';
 import { UserStatus } from '../../../generated/prisma/enums';
 import { IssueEmailVerificationResponseDto } from '../dtos/issue-email-verification-response.dto';
+import { LoginDto } from '../dtos/login.dto';
+import { LoginResponseDto } from '../dtos/login-response.dto';
 import { LogoutResponseDto } from '../dtos/logout-response.dto';
-import { RefreshTokenResultDto } from '../dtos/refresh-token-result.dto';
-import { UserLoginDto } from '../dtos/user-login.dto';
-import { UserLoginResponseDto } from '../dtos/user-login-response.dto';
-import { UserRegisterDto } from '../dtos/user-register.dto';
-import { UserRegisterResponseDto } from '../dtos/user-register-response.dto';
+import { RefreshResponseDto } from '../dtos/refresh-response.dto';
+import { RegisterDto } from '../dtos/register.dto';
+import { RegisterResponseDto } from '../dtos/register-response.dto';
 import { VerifyEmailResponseDto } from '../dtos/verify-email-response.dto';
-import { InvalidCredentialsException } from '../exceptions/invalidCredentials.exception';
-import { UnauthorizedUserException } from '../exceptions/unauthorized-user.exception';
+import { InvalidCredentialsException } from '../exceptions/invalid-credentials.exception';
 import { VerificationTokenExpiredException } from '../exceptions/verification-token-expired.exception';
 import { VerificationTokenNotFoundException } from '../exceptions/verification-token-not-found.exception';
 import {
@@ -43,6 +43,10 @@ import {
   FindUserByEmailPort,
 } from '../interfaces/find-user-by-email.port';
 import {
+  ISSUE_EMAIL_VERIFICATION_PORT,
+  IssueEmailVerificationPort,
+} from '../interfaces/issue-email-verification.port';
+import {
   SAVE_SESSION_PORT,
   SaveSessionPort,
 } from '../interfaces/save-session.port';
@@ -57,10 +61,6 @@ import {
 import { createRandomToken } from '../utils/create-random-token.util';
 import { parseTtlMs } from '../utils/parse-ttl-ms.util';
 import { Password } from '../value-objects/password.vo';
-import {
-  ISSUE_EMAIL_VERIFICATION_PORT,
-  IssueEmailVerificationPort,
-} from '../interfaces/issue-email-verification.port';
 import { HashingService } from './hashing.service';
 
 const DUMMY_PASSWORD_HASH =
@@ -138,7 +138,7 @@ export class AuthService {
     );
   }
 
-  async registerUser(dto: UserRegisterDto): Promise<UserRegisterResponseDto> {
+  async register(dto: RegisterDto): Promise<RegisterResponseDto> {
     const password = Password.create(dto.password);
     const passwordHash = await this.hashingService.hash(password.getValue());
     const email = dto.email.trim().toLowerCase();
@@ -163,10 +163,7 @@ export class AuthService {
     return { id: result.id, anonName: result.anonName };
   }
 
-  async loginUser(
-    dto: UserLoginDto,
-    res: Response,
-  ): Promise<UserLoginResponseDto> {
+  async login(dto: LoginDto, res: Response): Promise<LoginResponseDto> {
     const normalized = dto.email.trim().toLowerCase();
     const user = await this.findUserByEmailPort.execute(normalized);
 
@@ -252,7 +249,7 @@ export class AuthService {
     };
   }
 
-  async logoutUser(
+  async logout(
     res: Response,
     refreshToken?: string,
   ): Promise<LogoutResponseDto> {
@@ -288,11 +285,11 @@ export class AuthService {
     return { message: 'Logged out successfully' };
   }
 
-  async refreshToken(
+  async refresh(
     res: Response,
     refreshToken?: string,
-  ): Promise<RefreshTokenResultDto> {
-    if (!refreshToken) throw new UnauthorizedUserException();
+  ): Promise<RefreshResponseDto> {
+    if (!refreshToken) throw new UnauthorizedUserException(ErrorPath.AUTH);
 
     const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
     const session = await this.findByRefreshTokenHashPort.execute(tokenHash);
@@ -302,7 +299,7 @@ export class AuthService {
         path: '/v1/auth',
         sameSite: 'lax',
       });
-      throw new UnauthorizedUserException();
+      throw new UnauthorizedUserException(ErrorPath.AUTH);
     }
 
     if (session.user.status !== UserStatus.ACTIVE) {

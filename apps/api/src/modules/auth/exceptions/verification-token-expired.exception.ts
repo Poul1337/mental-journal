@@ -5,6 +5,9 @@ import { AppException } from '../../../common/exceptions/app.exception';
 
 export class VerificationTokenExpiredException extends AppException {
   constructor() {
-    super(`${ErrorPath.AUTH}: verified email expired`, HttpStatus.BAD_GATEWAY);
+    super(
+      `${ErrorPath.AUTH}: verification token expired`,
+      HttpStatus.BAD_REQUEST,
+    );
   }
 }

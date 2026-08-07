@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import { UnauthorizedUserException } from '../../modules/auth/exceptions/unauthorized-user.exception';
 import {
   FIND_USER_BY_ID_PORT,
   FindUserByIdPort,
@@ -14,6 +13,7 @@ import {
 import { ErrorPath } from '../const/error-path.const';
 import { AuthUser } from '../decorators/current-user.decorator';
 import { ERROR_PATH_KEY } from '../decorators/set-error-path.decorator';
+import { UnauthorizedUserException } from '../exceptions/custom/unauthorized-user.exception';
 import { assertAccountCanAct } from '../utils/assert-account-can-act.util';
 
 @Injectable()
@@ -29,7 +29,7 @@ export class AccountCanActGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<{ user?: AuthUser }>();
     const userId = req.user?.userId;
 
-    if (!userId) throw new UnauthorizedUserException();
+    if (!userId) throw new UnauthorizedUserException(ErrorPath.AUTH);
 
     const user = await this.findUserByIdPort.execute(userId);
 
