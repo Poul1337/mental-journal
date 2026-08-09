@@ -8,16 +8,8 @@ import {
   MinLength,
 } from 'class-validator';
 
-import {
-  ANON_NAME_MAX_LENGTH,
-  ANON_NAME_MIN_LENGTH,
-  ANON_NAME_REGEX,
-} from '../../user/value-objects/anon-name.vo';
-import {
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-  PASSWORD_REGEX,
-} from '../value-objects/password.vo';
+import { ANON_NAME_MAX_LENGTH, ANON_NAME_MIN_LENGTH, ANON_NAME_REGEX } from '../../user/consts/anon-name.const';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, PASSWORD_REGEX } from '../consts/password.const';
 
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com' })

@@ -1,5 +1,5 @@
 import { UserStatus } from '../../generated/prisma/enums';
-import { ErrorPath } from '../const/error-path.const';
+import { ErrorPath } from '../consts/error-path.const';
 import { AccountNotAllowedException } from '../exceptions/custom/account-not-allowed.exception';
 import { AccountNotVerifiedException } from '../exceptions/custom/account-not-verified.exception';
 import { UserNotFoundException } from '../exceptions/custom/user-not-found.exception';

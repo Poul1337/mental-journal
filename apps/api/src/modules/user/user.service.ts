@@ -1,34 +1,50 @@
 import { Injectable } from '@nestjs/common';
 
 import { VerifyEmailResult } from '../../common/enums/verify-email-result.enum';
-import { Prisma } from '../../generated/prisma/client';
+import { Prisma, UserStatus } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { IssueEmailVerificationResult } from './../../common/enums/issue-email.verification-result.enum';
-import { UserAlreadyExistsException } from './exception/user-already-exists.exception';
-import { FindUserByIdResult } from './interfaces/find-user-by-id-result';
-import { IssueEmailVerificationInputCommand } from './interfaces/issue-email-verification-input.command';
-import { RegisterUserCommand } from './interfaces/register-user.command';
-import { RegisteredUser } from './interfaces/registered-user';
-import { UserCredentials } from './interfaces/user-credentials';
+import { IssueEmailVerificationResult } from '../../common/enums/issue-email-verification-result.enum';
+import { UserAlreadyExistsException } from './exceptions/user-already-exists.exception';
+import { FindUserByIdResult } from './ports/find-user-by-id.port';
 import { AnonName } from './value-objects/anon-name.vo';
+
+interface RegisteredUser {
+  id: string;
+  anonName: string;
+}
+ 
+interface UserCredentials {
+  id: string;
+  email: string;
+  anonName: string;
+  passwordHash: string;
+  status: UserStatus;
+  emailVerified: boolean;
+}
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async registerUser(command: RegisterUserCommand): Promise<RegisteredUser> {
-    const email = command.email.trim().toLowerCase();
-    const anonName = AnonName.create(command.anonName);
+  async registerUser(input: {
+    email: string;
+    anonName: string;
+    passwordHash: string;
+    emailVerificationTokenHash: string;
+    emailVerificationTokenExpiresAt: Date;
+  }): Promise<RegisteredUser> {
+    const email = input.email.trim().toLowerCase();
+    const anonName = AnonName.create(input.anonName);
 
     try {
       const user = await this.prisma.user.create({
         data: {
           email,
           anonName: anonName.getValue(),
-          passwordHash: command.passwordHash,
-          emailVerificationTokenHash: command.emailVerificationTokenHash,
+          passwordHash: input.passwordHash,
+          emailVerificationTokenHash: input.emailVerificationTokenHash,
           emailVerificationTokenExpiresAt:
-            command.emailVerificationTokenExpiresAt,
+            input.emailVerificationTokenExpiresAt,
         },
       });
 
@@ -74,8 +90,8 @@ export class UserService {
     };
   }
 
-  async verifyEmail(verificationToken: string): Promise<VerifyEmailResult> {
-    const normalized = verificationToken.trim();
+  async verifyEmail(tokenHash: string): Promise<VerifyEmailResult> {
+    const normalized = tokenHash.trim();
 
     const user = await this.prisma.user.findFirst({
       where: {
@@ -111,9 +127,11 @@ export class UserService {
     return VerifyEmailResult.VERIFIED;
   }
 
-  async issueEmailVerification(
-    input: IssueEmailVerificationInputCommand,
-  ): Promise<IssueEmailVerificationResult> {
+  async issueEmailVerification(input: {
+    email: string;
+    tokenHash: string;
+    expiresAt: Date | null;
+  }): Promise<IssueEmailVerificationResult> {
     const email = input.email.trim().toLowerCase();
     const { tokenHash, expiresAt } = input;
 

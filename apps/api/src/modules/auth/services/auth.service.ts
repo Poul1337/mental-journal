@@ -4,8 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 import { createHash } from 'crypto';
 import type { Response } from 'express';
 
-import { ErrorPath } from '../../../common/const/error-path.const';
-import { IssueEmailVerificationResult } from '../../../common/enums/issue-email.verification-result.enum';
+import { ErrorPath } from '../../../common/consts/error-path.const';
+import { IssueEmailVerificationResult } from '../../../common/enums/issue-email-verification-result.enum';
 import { VerifyEmailResult } from '../../../common/enums/verify-email-result.enum';
 import { AccountNotAllowedException } from '../../../common/exceptions/custom/account-not-allowed.exception';
 import { UnauthorizedUserException } from '../../../common/exceptions/custom/unauthorized-user.exception';
@@ -25,39 +25,39 @@ import { VerificationTokenNotFoundException } from '../exceptions/verification-t
 import {
   REGISTER_USER_PORT,
   RegisterUserPort,
-} from '../interfaces/create-user.port';
+} from '../ports/register-user.port';
 import {
   DELETE_ALL_SESSIONS_PORT,
   DeleteAllSessionsPort,
-} from '../interfaces/delete-all-sessions.port';
+} from '../ports/delete-all-sessions.port';
 import {
   DELETE_SESSION_PORT,
   DeleteSessionPort,
-} from '../interfaces/delete-session.port';
+} from '../ports/delete-session.port';
 import {
   FIND_BY_REFRESH_TOKEN_HASH_PORT,
   FindByRefreshTokenHashPort,
-} from '../interfaces/find-by-refresh-token-hash.port';
+} from '../ports/find-by-refresh-token-hash.port';
 import {
   FIND_USER_BY_EMAIL_PORT,
   FindUserByEmailPort,
-} from '../interfaces/find-user-by-email.port';
+} from '../ports/find-user-by-email.port';
 import {
   ISSUE_EMAIL_VERIFICATION_PORT,
   IssueEmailVerificationPort,
-} from '../interfaces/issue-email-verification.port';
+} from '../ports/issue-email-verification.port';
 import {
   SAVE_SESSION_PORT,
   SaveSessionPort,
-} from '../interfaces/save-session.port';
+} from '../ports/save-session.port';
 import {
   SEND_VERIFICATION_EMAIL_PORT,
   SendVerificationEmailPort,
-} from '../interfaces/send-verification-email.port';
+} from '../ports/send-verification-email.port';
 import {
   VERIFY_EMAIL_PORT,
   VerifyEmailPort,
-} from '../interfaces/verify-email.port';
+} from '../ports/verify-email.port';
 import { createRandomToken } from '../utils/create-random-token.util';
 import { parseTtlMs } from '../utils/parse-ttl-ms.util';
 import { Password } from '../value-objects/password.vo';
@@ -155,7 +155,7 @@ export class AuthService {
     });
 
     try {
-      await this.sendVerificationEmailPort.execute(email, verificationLink);
+      await this.sendVerificationEmailPort.execute({ to: email, verificationLink});
     } catch (error) {
       this.logger.warn(`Verification email failed for ${email}`, error);
     }
@@ -165,7 +165,7 @@ export class AuthService {
 
   async login(dto: LoginDto, res: Response): Promise<LoginResponseDto> {
     const normalized = dto.email.trim().toLowerCase();
-    const user = await this.findUserByEmailPort.execute(normalized);
+    const user = await this.findUserByEmailPort.execute({ email: normalized });
 
     const hashToCompare = user?.passwordHash ?? DUMMY_PASSWORD_HASH;
     const ok = await this.hashingService.compare(dto.password, hashToCompare);
@@ -180,7 +180,7 @@ export class AuthService {
       expiresAt,
     } = createRandomToken(this.sessionRefreshTtlMs);
 
-    await this.saveSessionPort.execute(user.id, tokenHash, expiresAt);
+    await this.saveSessionPort.execute({ userId: user.id, refreshTokenHash:tokenHash, expiresAt });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
@@ -209,7 +209,7 @@ export class AuthService {
       .update(plainToken.trim())
       .digest('hex');
 
-    const result = await this.verifyEmailPort.execute(tokenHash);
+    const result = await this.verifyEmailPort.execute({ tokenHash });
 
     const Exception = VERIFY_EMAIL_ERRORS[result];
 
@@ -236,8 +236,10 @@ export class AuthService {
     if (result === IssueEmailVerificationResult.ISSUED) {
       try {
         await this.sendVerificationEmailPort.execute(
-          normalized,
-          verificationLink,
+          {
+            to: normalized,
+            verificationLink,
+          }
         );
       } catch (error) {
         this.logger.warn(`Verification email failed for ${normalized}`, error);
@@ -255,7 +257,7 @@ export class AuthService {
   ): Promise<LogoutResponseDto> {
     if (refreshToken) {
       const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
-      await this.deleteSessionPort.execute(tokenHash);
+      await this.deleteSessionPort.execute({ refreshTokenHash: tokenHash });
     }
 
     res.clearCookie('access_token', {
@@ -271,7 +273,7 @@ export class AuthService {
   }
 
   async logoutAll(res: Response, userId: string): Promise<LogoutResponseDto> {
-    await this.deleteAllSessionsPort.execute(userId);
+    await this.deleteAllSessionsPort.execute({ userId });
 
     res.clearCookie('access_token', {
       path: '/',
@@ -292,7 +294,7 @@ export class AuthService {
     if (!refreshToken) throw new UnauthorizedUserException(ErrorPath.AUTH);
 
     const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
-    const session = await this.findByRefreshTokenHashPort.execute(tokenHash);
+    const session = await this.findByRefreshTokenHashPort.execute({ refreshTokenHash: tokenHash });
 
     if (!session || session.expiresAt.getTime() < Date.now()) {
       res.clearCookie('refresh_token', {
@@ -316,8 +318,12 @@ export class AuthService {
       expiresAt,
     } = createRandomToken(this.sessionRefreshTtlMs);
 
-    await this.deleteSessionPort.execute(tokenHash);
-    await this.saveSessionPort.execute(session.userId, newHash, expiresAt);
+    await this.deleteSessionPort.execute({ refreshTokenHash: tokenHash });
+    await this.saveSessionPort.execute({
+      userId: session.userId, 
+      refreshTokenHash: newHash, 
+      expiresAt
+    });
 
     res.cookie('refresh_token', newRefresh, {
       httpOnly: true,
@@ -341,3 +347,6 @@ export class AuthService {
     return { id: session.userId, anonName: session.user.anonName };
   }
 }
+
+
+//Check if brake one service into few

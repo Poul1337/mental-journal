@@ -1,22 +1,21 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
-import { FindByRefreshTokenHashCommand } from './interface/find-by-refresh-token-hash.command';
 
 @Injectable()
 export class SessionService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async saveSession(
-    userId: string,
-    refreshTokenHash: string,
-    expiresAt: Date,
-  ): Promise<void> {
+  async saveSession(input: {
+    userId: string;
+    refreshTokenHash: string;
+    expiresAt: Date;
+  }): Promise<void> {
     await this.prisma.session.create({
       data: {
-        userId,
-        refreshTokenHash,
-        expiresAt,
+        userId: input.userId,
+        refreshTokenHash: input.refreshTokenHash,
+        expiresAt: input.expiresAt,
       },
     });
   }
@@ -37,9 +36,7 @@ export class SessionService {
     });
   }
 
-  async findByRefreshTokenHash(
-    refreshTokenHash: string,
-  ): Promise<FindByRefreshTokenHashCommand | null> {
+  async findByRefreshTokenHash(refreshTokenHash: string) {
     return await this.prisma.session.findUnique({
       where: { refreshTokenHash },
       select: {

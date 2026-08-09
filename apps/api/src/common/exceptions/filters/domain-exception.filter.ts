@@ -7,7 +7,7 @@ import {
 import type { Request, Response } from 'express';
 
 import { DomainException } from '../domain.exception';
-import { buildErrorResponse } from '../utlis/exception-response.util';
+import { buildErrorResponse } from '../utils/exception-response.util';
 
 @Catch(DomainException)
 export class DomainExceptionFilter implements ExceptionFilter {

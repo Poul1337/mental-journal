@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { ErrorPath } from '../../const/error-path.const';
+import { ErrorPath } from '../../consts/error-path.const';
 import { AppException } from '../app.exception';
 
 export class UnauthorizedUserException extends AppException {

@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 
-import { DELETE_ALL_SESSIONS_PORT } from '../auth/interfaces/delete-all-sessions.port';
-import { DELETE_SESSION_PORT } from '../auth/interfaces/delete-session.port';
-import { FIND_BY_REFRESH_TOKEN_HASH_PORT } from '../auth/interfaces/find-by-refresh-token-hash.port';
-import { SAVE_SESSION_PORT } from '../auth/interfaces/save-session.port';
-import { DeleteAllSessionsAdapter } from './adapter/delete-all-sessions.adapter';
-import { DeleteSessionAdapter } from './adapter/delete-session.adapter';
-import { FindByRefreshTokenHashAdapter } from './adapter/find-by-refresh-token-hash.adapter';
-import { SaveSessionAdapter } from './adapter/save-session.adapter';
+import { DELETE_ALL_SESSIONS_PORT } from '../auth/ports/delete-all-sessions.port';
+import { DELETE_SESSION_PORT } from '../auth/ports/delete-session.port';
+import { FIND_BY_REFRESH_TOKEN_HASH_PORT } from '../auth/ports/find-by-refresh-token-hash.port';
+import { SAVE_SESSION_PORT } from '../auth/ports/save-session.port';
+import { DeleteAllSessionsAdapter } from './adapters/delete-all-sessions.adapter';
+import { DeleteSessionAdapter } from './adapters/delete-session.adapter';
+import { FindByRefreshTokenHashAdapter } from './adapters/find-by-refresh-token-hash.adapter';
+import { SaveSessionAdapter } from './adapters/save-session.adapter';
 import { SessionService } from './session.service';
 
 @Module({

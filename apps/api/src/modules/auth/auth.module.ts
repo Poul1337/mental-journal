@@ -11,6 +11,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './services/auth.service';
 import { HashingService } from './services/hashing.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { AccountCanActGuard } from '../../common/guards/account-can-act.guard';
 
 const jwtModuleFactory = (config: ConfigService) => ({
   secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
@@ -30,7 +31,7 @@ const jwtModuleFactory = (config: ConfigService) => ({
     MailModule,
     SessionModule,
   ],
-  providers: [AuthService, HashingService, JwtStrategy],
+  providers: [AuthService, HashingService, JwtStrategy, AccountCanActGuard],
   controllers: [AuthController],
 })
 export class AuthModule {}

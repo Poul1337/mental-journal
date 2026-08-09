@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { SEND_VERIFICATION_EMAIL_PORT } from '../auth/interfaces/send-verification-email.port';
-import { SendVerificationEmailAdapter } from './adapter/send-verification-email.adapter';
+import { SEND_VERIFICATION_EMAIL_PORT } from '../auth/ports/send-verification-email.port';
+import { SendVerificationEmailAdapter } from './adapters/send-verification-email.adapter';
 import { MailService } from './mail.service';
 
 @Module({

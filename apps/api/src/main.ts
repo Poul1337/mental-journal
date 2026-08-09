@@ -9,7 +9,7 @@ import { AppModule } from './app.module';
 import { CatchAllExceptionFilter } from './common/exceptions/filters/catch-all-exception.filter';
 import { DomainExceptionFilter } from './common/exceptions/filters/domain-exception.filter';
 import { HttpExceptionFilter } from './common/exceptions/filters/http-exception.filter';
-import { mapValidationErrors } from './common/exceptions/utlis/validation-errors.util';
+import { mapValidationErrors } from './common/exceptions/utils/validation-errors.util';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

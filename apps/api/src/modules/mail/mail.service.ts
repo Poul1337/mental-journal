@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
-import { MailSendFailedException } from './exception/mail-send-failed.exception';
-import { verificationEmailContent } from './templates/verification.email';
+import { MailSendFailedException } from './exceptions/mail-send-failed.exception';
+import { verificationEmailContent } from './templates/verification-email.template';
 
 interface SendParams {
   to: string;
@@ -28,9 +28,12 @@ export class MailService {
   }
 
   async sendVerificationEmail(
-    to: string,
-    verificationLink: string,
+    input: { 
+      to: string,
+      verificationLink: string,
+    }
   ): Promise<void> {
+    const { to, verificationLink } = input
     const content = verificationEmailContent(verificationLink);
 
     await this.send({
@@ -57,7 +60,7 @@ export class MailService {
       }
 
       this.logger.log(
-        `Mail send to: ${params.to} (id=${data.id ?? 'unknown'})`,
+        `Mail sent to: ${params.to} (id=${data.id ?? 'unknown'})`,
       );
     } catch (error) {
       if (error instanceof MailSendFailedException) throw error;

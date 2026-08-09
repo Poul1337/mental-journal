@@ -9,7 +9,7 @@ import type { Request, Response } from 'express';
 import {
   buildErrorResponse,
   parseHttpException,
-} from '../utlis/exception-response.util';
+} from '../utils/exception-response.util';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {

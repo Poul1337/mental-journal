@@ -1,10 +1,5 @@
-import { AnonNameInvalidException } from '../exception/anon-name-invalid.exception';
-
-export const ANON_NAME_MIN_LENGTH = 3;
-export const ANON_NAME_MAX_LENGTH = 24;
-export const ANON_NAME_REGEX: RegExp = new RegExp(
-  `^[a-zA-Z0-9_]{${ANON_NAME_MIN_LENGTH},${ANON_NAME_MAX_LENGTH}}$`,
-);
+import { ANON_NAME_REGEX } from '../consts/anon-name.const';
+import { AnonNameInvalidException } from '../exceptions/anon-name-invalid.exception';
 
 export class AnonName {
   private constructor(private readonly value: string) {}

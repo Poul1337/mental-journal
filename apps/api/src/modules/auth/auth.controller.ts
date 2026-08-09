@@ -10,7 +10,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
@@ -30,15 +30,20 @@ import { RegisterResponseDto } from './dtos/register-response.dto';
 import { VerifyEmailQueryDto } from './dtos/verify-email-query.dto';
 import { VerifyEmailResponseDto } from './dtos/verify-email-response.dto';
 import { AuthService } from './services/auth.service';
+import { AccountCanActGuard } from '../../common/guards/account-can-act.guard';
+import { SetErrorPath } from '../../common/decorators/set-error-path.decorator';
+import { ErrorPath } from '../../common/consts/error-path.const';
 
+@SetErrorPath(ErrorPath.AUTH)
 @Controller('auth')
+@ApiTags('Auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiCreatedResponse({ type: RegisterResponseDto })
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  registerUser(@Body() dto: RegisterDto): Promise<RegisterResponseDto> {
+  register(@Body() dto: RegisterDto): Promise<RegisterResponseDto> {
     return this.authService.register(dto);
   }
 
@@ -60,7 +65,7 @@ export class AuthController {
     return this.authService.verifyEmail(dto.token);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccountCanActGuard)
   @Get('me')
   me(@CurrentUser() currentUser: AuthUser) {
     return currentUser;
@@ -69,7 +74,7 @@ export class AuthController {
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Post('resend-verification')
   @HttpCode(HttpStatus.OK)
-  issueVerificationEmail(
+  issueEmailVerification(
     @Body() dto: IssueEmailVerificationDto,
   ): Promise<IssueEmailVerificationResponseDto> {
     return this.authService.issueEmailVerification(dto.email);
@@ -85,10 +90,10 @@ export class AuthController {
     return this.authService.logout(res, refreshToken);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccountCanActGuard)
   @Post('logout-all')
   @HttpCode(HttpStatus.OK)
-  logoutAllSessions(
+  logoutAll(
     @Res({ passthrough: true }) res: Response,
     @CurrentUser() currentUser: AuthUser,
   ): Promise<LogoutResponseDto> {

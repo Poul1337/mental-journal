@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { ErrorPath } from '../../common/const/error-path.const';
+import { ErrorPath } from '../../common/consts/error-path.const';
 import {
   AuthUser,
   CurrentUser,

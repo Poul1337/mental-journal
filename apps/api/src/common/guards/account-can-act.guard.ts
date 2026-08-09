@@ -9,8 +9,8 @@ import { Reflector } from '@nestjs/core';
 import {
   FIND_USER_BY_ID_PORT,
   FindUserByIdPort,
-} from '../../modules/user/interfaces/find-user-by-id.port';
-import { ErrorPath } from '../const/error-path.const';
+} from '../../modules/user/ports/find-user-by-id.port';
+import { ErrorPath } from '../consts/error-path.const';
 import { AuthUser } from '../decorators/current-user.decorator';
 import { ERROR_PATH_KEY } from '../decorators/set-error-path.decorator';
 import { UnauthorizedUserException } from '../exceptions/custom/unauthorized-user.exception';

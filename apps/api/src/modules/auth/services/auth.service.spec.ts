@@ -14,15 +14,15 @@ import { RegisterDto } from '../dtos/register.dto';
 import { InvalidCredentialsException } from '../exceptions/invalid-credentials.exception';
 import { VerificationTokenExpiredException } from '../exceptions/verification-token-expired.exception';
 import { VerificationTokenNotFoundException } from '../exceptions/verification-token-not-found.exception';
-import { REGISTER_USER_PORT } from '../interfaces/create-user.port';
-import { DELETE_ALL_SESSIONS_PORT } from '../interfaces/delete-all-sessions.port';
-import { DELETE_SESSION_PORT } from '../interfaces/delete-session.port';
-import { FIND_BY_REFRESH_TOKEN_HASH_PORT } from '../interfaces/find-by-refresh-token-hash.port';
-import { FIND_USER_BY_EMAIL_PORT } from '../interfaces/find-user-by-email.port';
-import { ISSUE_EMAIL_VERIFICATION_PORT } from '../interfaces/issue-email-verification.port';
-import { SAVE_SESSION_PORT } from '../interfaces/save-session.port';
-import { SEND_VERIFICATION_EMAIL_PORT } from '../interfaces/send-verification-email.port';
-import { VERIFY_EMAIL_PORT } from '../interfaces/verify-email.port';
+import { REGISTER_USER_PORT } from '../ports/register-user.port';
+import { DELETE_ALL_SESSIONS_PORT } from '../ports/delete-all-sessions.port';
+import { DELETE_SESSION_PORT } from '../ports/delete-session.port';
+import { FIND_BY_REFRESH_TOKEN_HASH_PORT } from '../ports/find-by-refresh-token-hash.port';
+import { FIND_USER_BY_EMAIL_PORT } from '../ports/find-user-by-email.port';
+import { ISSUE_EMAIL_VERIFICATION_PORT } from '../ports/issue-email-verification.port';
+import { SAVE_SESSION_PORT } from '../ports/save-session.port';
+import { SEND_VERIFICATION_EMAIL_PORT } from '../ports/send-verification-email.port';
+import { VERIFY_EMAIL_PORT } from '../ports/verify-email.port';
 import { AuthService } from './auth.service';
 import { HashingService } from './hashing.service';
 
@@ -128,7 +128,7 @@ describe('AuthService', () => {
 
     const result = await authService.login(loginDto as LoginDto, res);
 
-    expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
+    expect(findUserByEmailPort.execute).toHaveBeenCalledWith({ email: 'test@test.pl' });
     expect(hashingService.compare).toHaveBeenCalledWith(
       'Pokemon1!',
       'hashedPassword123!',
@@ -163,7 +163,7 @@ describe('AuthService', () => {
       InvalidCredentialsException,
     );
 
-    expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
+    expect(findUserByEmailPort.execute).toHaveBeenCalledWith({ email: 'test@test.pl' });
     expect(saveSessionPort.execute).not.toHaveBeenCalled();
     expect(jwtService.signAsync).not.toHaveBeenCalled();
     expect(res.cookie).not.toHaveBeenCalled();
@@ -182,7 +182,7 @@ describe('AuthService', () => {
       InvalidCredentialsException,
     );
 
-    expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
+    expect(findUserByEmailPort.execute).toHaveBeenCalledWith({ email: 'test@test.pl' });
     expect(hashingService.compare).toHaveBeenCalledWith(
       'WrongPassword123!',
       'hashedPassword123!',
@@ -206,7 +206,7 @@ describe('AuthService', () => {
       AccountNotAllowedException,
     );
 
-    expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
+    expect(findUserByEmailPort.execute).toHaveBeenCalledWith({ email: 'test@test.pl' });
     expect(hashingService.compare).toHaveBeenCalledWith(
       'Pokemon1!',
       'hashedPassword123!',
@@ -229,7 +229,7 @@ describe('AuthService', () => {
       AccountNotAllowedException,
     );
 
-    expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
+    expect(findUserByEmailPort.execute).toHaveBeenCalledWith({ email: 'test@test.pl' });
     expect(hashingService.compare).toHaveBeenCalledWith(
       'Pokemon1!',
       'hashedPassword123!',
@@ -253,7 +253,7 @@ describe('AuthService', () => {
       AccountNotVerifiedException,
     );
 
-    expect(findUserByEmailPort.execute).toHaveBeenCalledWith('test@test.pl');
+    expect(findUserByEmailPort.execute).toHaveBeenCalledWith({ email: 'test@test.pl' });
     expect(hashingService.compare).toHaveBeenCalledWith(
       'Pokemon1!',
       'hashedPassword123!',
@@ -284,10 +284,10 @@ describe('AuthService', () => {
         passwordHash: 'hashedPassword123!',
       }),
     );
-    expect(sendVerificationEmailPort.execute).toHaveBeenCalledWith(
-      registerDto.email.trim().toLowerCase(),
-      expect.stringContaining('/verify-email?token='),
-    );
+    expect(sendVerificationEmailPort.execute).toHaveBeenCalledWith({
+      to: registerDto.email.trim().toLowerCase(),
+      verificationLink: expect.stringContaining('/verify-email?token='),
+    });
     expect(result).toEqual({ id: 'user-1', anonName: registerDto.anonName });
   });
 
@@ -320,7 +320,7 @@ describe('AuthService', () => {
 
     const result = await authService.verifyEmail(plainToken);
 
-    expect(verifyEmailPort.execute).toHaveBeenCalledWith(tokenHash);
+    expect(verifyEmailPort.execute).toHaveBeenCalledWith({ tokenHash });
     expect(result).toEqual({ message: 'Email verified successfully' });
   });
 
@@ -334,7 +334,7 @@ describe('AuthService', () => {
       VerificationTokenNotFoundException,
     );
 
-    expect(verifyEmailPort.execute).toHaveBeenCalledWith(tokenHash);
+    expect(verifyEmailPort.execute).toHaveBeenCalledWith({ tokenHash });
   });
 
   it('should throw when EXPIRED', async () => {
@@ -347,7 +347,7 @@ describe('AuthService', () => {
       VerificationTokenExpiredException,
     );
 
-    expect(verifyEmailPort.execute).toHaveBeenCalledWith(tokenHash);
+    expect(verifyEmailPort.execute).toHaveBeenCalledWith({ tokenHash });
   });
 
   //Refresh token tests
@@ -372,7 +372,7 @@ describe('AuthService', () => {
       UnauthorizedUserException,
     );
 
-    expect(findByRefreshTokenHashPort.execute).toHaveBeenCalledWith(tokenHash);
+    expect(findByRefreshTokenHashPort.execute).toHaveBeenCalledWith({ refreshTokenHash: tokenHash });
     expect(res.clearCookie).toHaveBeenCalledWith(
       'refresh_token',
       expect.objectContaining({ path: '/v1/auth' }),
@@ -404,15 +404,13 @@ describe('AuthService', () => {
 
     const result = await authService.refresh(res, refreshToken);
 
-    expect(findByRefreshTokenHashPort.execute).toHaveBeenCalledWith(
-      oldTokenHash,
-    );
-    expect(deleteSessionPort.execute).toHaveBeenCalledWith(oldTokenHash);
-    expect(saveSessionPort.execute).toHaveBeenCalledWith(
-      'user-1',
-      expect.any(String),
-      expect.any(Date),
-    );
+    expect(findByRefreshTokenHashPort.execute).toHaveBeenCalledWith({
+      refreshTokenHash: oldTokenHash,
+    });
+    expect(deleteSessionPort.execute).toHaveBeenCalledWith({
+      refreshTokenHash: oldTokenHash,
+    });
+    expect(saveSessionPort.execute).toHaveBeenCalledWith({ userId: 'user-1', refreshTokenHash: expect.any(String), expiresAt: expect.any(Date) });
     expect(jwtService.signAsync).toHaveBeenCalled();
     expect(res.cookie).toHaveBeenCalledWith(
       'refresh_token',
@@ -437,7 +435,7 @@ describe('AuthService', () => {
 
     const result = await authService.logout(res, refreshToken);
 
-    expect(deleteSessionPort.execute).toHaveBeenCalledWith(tokenHash);
+    expect(deleteSessionPort.execute).toHaveBeenCalledWith({ refreshTokenHash: tokenHash });
     expect(res.clearCookie).toHaveBeenCalledWith(
       'access_token',
       expect.objectContaining({ path: '/' }),
@@ -476,7 +474,7 @@ describe('AuthService', () => {
 
     const result = await authService.logoutAll(res, 'user-1');
 
-    expect(deleteAllSessionsPort.execute).toHaveBeenCalledWith('user-1');
+    expect(deleteAllSessionsPort.execute).toHaveBeenCalledWith({ userId: 'user-1' });
     expect(res.clearCookie).toHaveBeenCalledWith(
       'access_token',
       expect.objectContaining({ path: '/' }),
