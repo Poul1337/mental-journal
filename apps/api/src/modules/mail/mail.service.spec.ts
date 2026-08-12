@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { MailService } from "./mail.service"
 import { ConfigService } from "@nestjs/config";
+import { MailSendFailedException } from "./exceptions/mail-send-failed.exception";
 
 const sendMock = jest.fn();
 
@@ -9,6 +10,19 @@ jest.mock('resend', () => ({
         emails: { send: sendMock }
     }))
 }))
+
+const input = {
+    to: 'test@user.pl',
+    verificationLink: 'http://localhost:3000/verify-email?token=abc123'
+}
+
+const emailEntry = {
+    from: 'noreply@test.pl',
+    to: ['test@user.pl'],
+    subject: 'Verify your email',
+    html: expect.stringContaining(input.verificationLink),
+    text: `Verify your email: ${input.verificationLink}`,
+}
 
 describe('MailService', () => {
     let mailService: MailService;
@@ -38,11 +52,6 @@ describe('MailService', () => {
 
    describe('sendVerificationEmail', () => {
     it('should send verification email', async () => { 
-        const input = {
-            to: 'test@user.pl',
-            verificationLink: 'http://localhost:3000/verify-email?token=abc123'
-        } 
-
         sendMock.mockResolvedValue({
             data: { id: 'msg-1' },
             error: null
@@ -50,17 +59,16 @@ describe('MailService', () => {
 
         await mailService.sendVerificationEmail(input)
 
-        expect(sendMock).toHaveBeenCalledWith({
-            from: 'noreply@test.pl',
-            to: ['test@user.pl'],
-            subject: 'Test Subject',
-            html: expect.stringContaining(input.verificationLink),
-            text: `Verify your email: ${input.verificationLink}`,
-        })
+        expect(sendMock).toHaveBeenCalledWith(emailEntry)
     })
 
     it('should throw MailSendFailedException when Resend returns error', async () => {
+        sendMock.mockResolvedValue({
+            data: { id: 'msg-1' },
+            error: { message: 'failed' }
+        })
 
+        await expect(mailService.sendVerificationEmail(input)).rejects.toThrow(MailSendFailedException)
     })
    })
 })
