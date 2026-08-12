@@ -114,8 +114,8 @@ describe('AuthService', () => {
     jest.clearAllMocks();
   });
 
-  //Login tests
-  it('should log in with valid credentials', async () => {
+  describe('login', () => {
+    it('should log in with valid credentials', async () => {
     const loginDto = makeLoginDto();
     const user = makeUser();
 
@@ -262,9 +262,10 @@ describe('AuthService', () => {
     expect(jwtService.signAsync).not.toHaveBeenCalled();
     expect(res.cookie).not.toHaveBeenCalled();
   });
+  });
 
-  //Register tests
-  it('should register user and send verification email', async () => {
+  describe('register', () => {
+    it('should register user and send verification email', async () => {
     const registerDto = makeRegisterDto();
 
     hashingService.hash.mockResolvedValue('hashedPassword123!');
@@ -310,9 +311,10 @@ describe('AuthService', () => {
     expect(sendVerificationEmailPort.execute).toHaveBeenCalled();
     expect(result).toEqual({ id: 'user-1', anonName: registerDto.anonName });
   });
+  });
 
-  //Verify email tests
-  it('should return success when VERIFIED', async () => {
+  describe('verifyEmail', () => {
+    it('should return success when VERIFIED', async () => {
     const plainToken = '1234567890abcdefgh';
     const tokenHash = createHash('sha256').update(plainToken).digest('hex');
 
@@ -349,9 +351,10 @@ describe('AuthService', () => {
 
     expect(verifyEmailPort.execute).toHaveBeenCalledWith({ tokenHash });
   });
+  });
 
-  //Refresh token tests
-  it('should throw when refresh token missing', async () => {
+  describe('refresh', () => {
+    it('should throw when refresh token missing', async () => {
     const res = makeRes(true);
 
     await expect(authService.refresh(res, undefined)).rejects.toThrow(
@@ -424,9 +427,10 @@ describe('AuthService', () => {
     );
     expect(result).toEqual({ id: 'user-1', anonName: 'TestUser' });
   });
+  });
 
-  //logout tests
-  it('should delete session and clear cookies when refresh token provided', async () => {
+  describe('logout', () => {
+    it('should delete session and clear cookies when refresh token provided', async () => {
     const refreshToken = '1234567890abcdefgh';
     const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
     const res = makeRes(true);
@@ -465,9 +469,10 @@ describe('AuthService', () => {
     );
     expect(result).toEqual({ message: 'Logged out successfully' });
   });
+  });
 
-  //logout all tests
-  it('should logout all', async () => {
+  describe('logoutAll', () => {
+    it('should logout all', async () => {
     const res = makeRes(true);
 
     deleteAllSessionsPort.execute.mockResolvedValue(undefined);
@@ -484,5 +489,6 @@ describe('AuthService', () => {
       expect.objectContaining({ path: '/v1/auth' }),
     );
     expect(result).toEqual({ message: 'Logged out successfully' });
+  });
   });
 });
