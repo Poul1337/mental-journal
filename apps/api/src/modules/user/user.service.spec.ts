@@ -108,6 +108,8 @@ describe('UserService', () => {
     );
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
@@ -116,7 +118,6 @@ describe('UserService', () => {
     }).compile();
 
     userService = module.get(UserService);
-    jest.clearAllMocks();
   });
 
   describe('registerUser', () => {
