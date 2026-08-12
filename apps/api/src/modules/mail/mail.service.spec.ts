@@ -16,13 +16,6 @@ const input = {
     verificationLink: 'http://localhost:3000/verify-email?token=abc123'
 }
 
-const emailEntry = {
-    from: 'noreply@test.pl',
-    to: ['test@user.pl'],
-    subject: 'Verify your email',
-    html: expect.stringContaining(input.verificationLink),
-    text: `Verify your email: ${input.verificationLink}`,
-}
 
 describe('MailService', () => {
     let mailService: MailService;
@@ -59,7 +52,13 @@ describe('MailService', () => {
 
         await mailService.sendVerificationEmail(input)
 
-        expect(sendMock).toHaveBeenCalledWith(emailEntry)
+        expect(sendMock).toHaveBeenCalledWith({
+            from: 'noreply@test.pl',
+            to: ['test@user.pl'],
+            subject: 'Verify your email',
+            html: expect.stringContaining(input.verificationLink),
+            text: `Verify your email: ${input.verificationLink}`,
+        })
     })
 
     it('should throw MailSendFailedException when Resend returns error', async () => {
