@@ -83,6 +83,8 @@ describe('AuthService', () => {
   const jwtService = { signAsync: jest.fn() };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -111,7 +113,6 @@ describe('AuthService', () => {
     }).compile();
 
     authService = module.get(AuthService);
-    jest.clearAllMocks();
   });
 
   describe('login', () => {
