@@ -1,5 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing"
-import { JournalService } from "./journal.service"
+import { ENTRIES_LIST_TAKE, JournalService } from "./journal.service"
 import { PrismaService } from "../../prisma/prisma.service"
 import { EntryStatus, EntryVisibility } from "../../generated/prisma/enums"
 import { CreateEntryDto } from "./dtos/create-entry.dto";
@@ -9,7 +9,6 @@ import { UpdateEntryDto } from "./dtos/update-entry.dto";
 
 const USER_ID = 'user-1';
 const ENTRY_ID = 'entry-1';
-const ENTRIES_LIST_TAKE = 10;
 
 const makeCreateEntryDto = (
     overrides: Partial<CreateEntryDto> = {}
@@ -24,12 +23,6 @@ const makeCreateEntryDto = (
 const makeFindAllEntriesDto = (
     overrides: Partial<ListEntriesQueryDto> = {}
 ): ListEntriesQueryDto => ({
-    lastCursorId: 'cursor-1',
-    lastCreatedAt: new Date(Date.now()),
-    visibility: "PUBLIC",
-    lastMood: 3,
-    orderBy: 'desc',
-    sortBy: "date",
     ...overrides
 })
 
@@ -134,6 +127,32 @@ describe('journalService', () => {
                 id: entries[ENTRIES_LIST_TAKE - 1].id,
                 createdAt: entries[ENTRIES_LIST_TAKE - 1].createdAt,
             });
+        })
+
+        it('should apply createdAt cursor on the next page', async () => {
+            const lastCreatedAt = new Date('2026-01-01T00:00:00.000Z');
+
+            const dto = makeFindAllEntriesDto({
+              lastCursorId: ENTRY_ID,
+              lastCreatedAt,
+            });
+
+            prismaService.journalEntry.findMany.mockResolvedValue([]);
+
+            await journalService.findAll(USER_ID, dto);
+            
+            expect(prismaService.journalEntry.findMany).toHaveBeenCalledWith(
+              expect.objectContaining({
+                where: expect.objectContaining({
+                  userId: USER_ID,
+                  deletedAt: null,
+                  OR: [
+                    { createdAt: { lt: lastCreatedAt } },
+                    { createdAt: lastCreatedAt, id: { lt: ENTRY_ID } },
+                  ],
+                }),
+              }),
+            );
         })
 
         it('should return all items and no cursor when a short page comes back', async () => {
