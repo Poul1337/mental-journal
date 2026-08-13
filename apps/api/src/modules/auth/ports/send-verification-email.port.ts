@@ -1,6 +1,6 @@
 export interface SendVerificationEmailInput {
   to: string;
-  verificationLink: string
+  verificationLink: string;
 }
 
 export interface SendVerificationEmailPort {

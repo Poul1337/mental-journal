@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
+import { IssueEmailVerificationResult } from '../../common/enums/issue-email-verification-result.enum';
 import { VerifyEmailResult } from '../../common/enums/verify-email-result.enum';
 import { Prisma, UserStatus } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { IssueEmailVerificationResult } from '../../common/enums/issue-email-verification-result.enum';
 import { UserAlreadyExistsException } from './exceptions/user-already-exists.exception';
 import { FindUserByIdResult } from './ports/find-user-by-id.port';
 import { AnonName } from './value-objects/anon-name.vo';
@@ -12,7 +12,7 @@ interface RegisteredUser {
   id: string;
   anonName: string;
 }
- 
+
 interface UserCredentials {
   id: string;
   email: string;

@@ -1,9 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
 import { SkipThrottle } from '@nestjs/throttler';
 
 import { PrismaService } from '../../prisma/prisma.service';
-import { ApiTags } from '@nestjs/swagger';
 
 @Controller('health')
 @ApiTags('Health')

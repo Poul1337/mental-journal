@@ -14,10 +14,13 @@ import { ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
+import { ErrorPath } from '../../common/consts/error-path.const';
 import {
   AuthUser,
   CurrentUser,
 } from '../../common/decorators/current-user.decorator';
+import { SetErrorPath } from '../../common/decorators/set-error-path.decorator';
+import { AccountCanActGuard } from '../../common/guards/account-can-act.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { IssueEmailVerificationDto } from './dtos/issue-email-verification.dto';
 import { IssueEmailVerificationResponseDto } from './dtos/issue-email-verification-response.dto';
@@ -30,9 +33,6 @@ import { RegisterResponseDto } from './dtos/register-response.dto';
 import { VerifyEmailQueryDto } from './dtos/verify-email-query.dto';
 import { VerifyEmailResponseDto } from './dtos/verify-email-response.dto';
 import { AuthService } from './services/auth.service';
-import { AccountCanActGuard } from '../../common/guards/account-can-act.guard';
-import { SetErrorPath } from '../../common/decorators/set-error-path.decorator';
-import { ErrorPath } from '../../common/consts/error-path.const';
 
 @SetErrorPath(ErrorPath.AUTH)
 @Controller('auth')

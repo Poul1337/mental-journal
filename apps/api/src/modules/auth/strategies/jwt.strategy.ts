@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import type { Request } from 'express';
 import { Strategy } from 'passport-jwt';
+
 import { AuthUser } from '../../../common/decorators/current-user.decorator';
 
 @Injectable()

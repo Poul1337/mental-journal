@@ -1,5 +1,5 @@
 export interface DeleteSessionInput {
-  refreshTokenHash: string
+  refreshTokenHash: string;
 }
 
 export interface DeleteSessionPort {

@@ -8,9 +8,7 @@ import {
 import { SessionService } from '../session.service';
 
 @Injectable()
-export class FindByRefreshTokenHashAdapter
-  implements FindByRefreshTokenHashPort
-{
+export class FindByRefreshTokenHashAdapter implements FindByRefreshTokenHashPort {
   constructor(private readonly sessionService: SessionService) {}
 
   async execute({

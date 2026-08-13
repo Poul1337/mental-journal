@@ -4,6 +4,7 @@ import type { JwtSignOptions } from '@nestjs/jwt';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
+import { AccountCanActGuard } from '../../common/guards/account-can-act.guard';
 import { MailModule } from '../mail/mail.module';
 import { SessionModule } from '../session/session.module';
 import { UserModule } from '../user/user.module';
@@ -11,7 +12,6 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './services/auth.service';
 import { HashingService } from './services/hashing.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { AccountCanActGuard } from '../../common/guards/account-can-act.guard';
 
 const jwtModuleFactory = (config: ConfigService) => ({
   secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),

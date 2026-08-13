@@ -1,5 +1,5 @@
-import { PasswordInvalidException } from '../exceptions/password-invalid.exception';
 import { PASSWORD_REGEX } from '../consts/password.const';
+import { PasswordInvalidException } from '../exceptions/password-invalid.exception';
 
 export class Password {
   private constructor(private readonly value: string) {}

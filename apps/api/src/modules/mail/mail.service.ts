@@ -27,13 +27,11 @@ export class MailService {
     this.from = this.configService.getOrThrow<string>('MAIL_FROM');
   }
 
-  async sendVerificationEmail(
-    input: { 
-      to: string,
-      verificationLink: string,
-    }
-  ): Promise<void> {
-    const { to, verificationLink } = input
+  async sendVerificationEmail(input: {
+    to: string;
+    verificationLink: string;
+  }): Promise<void> {
+    const { to, verificationLink } = input;
     const content = verificationEmailContent(verificationLink);
 
     await this.send({

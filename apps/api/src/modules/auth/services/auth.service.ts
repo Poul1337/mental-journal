@@ -23,10 +23,6 @@ import { InvalidCredentialsException } from '../exceptions/invalid-credentials.e
 import { VerificationTokenExpiredException } from '../exceptions/verification-token-expired.exception';
 import { VerificationTokenNotFoundException } from '../exceptions/verification-token-not-found.exception';
 import {
-  REGISTER_USER_PORT,
-  RegisterUserPort,
-} from '../ports/register-user.port';
-import {
   DELETE_ALL_SESSIONS_PORT,
   DeleteAllSessionsPort,
 } from '../ports/delete-all-sessions.port';
@@ -47,17 +43,15 @@ import {
   IssueEmailVerificationPort,
 } from '../ports/issue-email-verification.port';
 import {
-  SAVE_SESSION_PORT,
-  SaveSessionPort,
-} from '../ports/save-session.port';
+  REGISTER_USER_PORT,
+  RegisterUserPort,
+} from '../ports/register-user.port';
+import { SAVE_SESSION_PORT, SaveSessionPort } from '../ports/save-session.port';
 import {
   SEND_VERIFICATION_EMAIL_PORT,
   SendVerificationEmailPort,
 } from '../ports/send-verification-email.port';
-import {
-  VERIFY_EMAIL_PORT,
-  VerifyEmailPort,
-} from '../ports/verify-email.port';
+import { VERIFY_EMAIL_PORT, VerifyEmailPort } from '../ports/verify-email.port';
 import { createRandomToken } from '../utils/create-random-token.util';
 import { parseTtlMs } from '../utils/parse-ttl-ms.util';
 import { Password } from '../value-objects/password.vo';
@@ -155,7 +149,10 @@ export class AuthService {
     });
 
     try {
-      await this.sendVerificationEmailPort.execute({ to: email, verificationLink});
+      await this.sendVerificationEmailPort.execute({
+        to: email,
+        verificationLink,
+      });
     } catch (error) {
       this.logger.warn(`Verification email failed for ${email}`, error);
     }
@@ -180,7 +177,11 @@ export class AuthService {
       expiresAt,
     } = createRandomToken(this.sessionRefreshTtlMs);
 
-    await this.saveSessionPort.execute({ userId: user.id, refreshTokenHash:tokenHash, expiresAt });
+    await this.saveSessionPort.execute({
+      userId: user.id,
+      refreshTokenHash: tokenHash,
+      expiresAt,
+    });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
@@ -235,12 +236,10 @@ export class AuthService {
 
     if (result === IssueEmailVerificationResult.ISSUED) {
       try {
-        await this.sendVerificationEmailPort.execute(
-          {
-            to: normalized,
-            verificationLink,
-          }
-        );
+        await this.sendVerificationEmailPort.execute({
+          to: normalized,
+          verificationLink,
+        });
       } catch (error) {
         this.logger.warn(`Verification email failed for ${normalized}`, error);
       }
@@ -294,7 +293,9 @@ export class AuthService {
     if (!refreshToken) throw new UnauthorizedUserException(ErrorPath.AUTH);
 
     const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
-    const session = await this.findByRefreshTokenHashPort.execute({ refreshTokenHash: tokenHash });
+    const session = await this.findByRefreshTokenHashPort.execute({
+      refreshTokenHash: tokenHash,
+    });
 
     if (!session || session.expiresAt.getTime() < Date.now()) {
       res.clearCookie('refresh_token', {
@@ -320,9 +321,9 @@ export class AuthService {
 
     await this.deleteSessionPort.execute({ refreshTokenHash: tokenHash });
     await this.saveSessionPort.execute({
-      userId: session.userId, 
-      refreshTokenHash: newHash, 
-      expiresAt
+      userId: session.userId,
+      refreshTokenHash: newHash,
+      expiresAt,
     });
 
     res.cookie('refresh_token', newRefresh, {
@@ -347,6 +348,5 @@ export class AuthService {
     return { id: session.userId, anonName: session.user.anonName };
   }
 }
-
 
 //Check if brake one service into few

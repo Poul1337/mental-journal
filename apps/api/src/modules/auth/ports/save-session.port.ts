@@ -1,7 +1,7 @@
 export interface SaveSessionInput {
   userId: string;
   refreshTokenHash: string;
-  expiresAt: Date
+  expiresAt: Date;
 }
 
 export interface SaveSessionPort {

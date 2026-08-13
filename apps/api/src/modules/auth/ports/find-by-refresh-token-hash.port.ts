@@ -17,7 +17,9 @@ export interface FindByRefreshTokenHashResult {
 }
 
 export interface FindByRefreshTokenHashPort {
-  execute(input: FindByRefreshTokenHashInput): Promise<FindByRefreshTokenHashResult | null>;
+  execute(
+    input: FindByRefreshTokenHashInput,
+  ): Promise<FindByRefreshTokenHashResult | null>;
 }
 
 export const FIND_BY_REFRESH_TOKEN_HASH_PORT = Symbol(

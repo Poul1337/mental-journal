@@ -42,12 +42,12 @@ async function bootstrap() {
     }),
   );
 
-  if(process.env.NODE_ENV !== 'prod'){
+  if (process.env.NODE_ENV !== 'prod') {
     const config = new DocumentBuilder()
-    .setTitle('Mental Journal API')
-    .setDescription('API for the Mental Journal app')
-    .setVersion('1.0')
-    .build();
+      .setTitle('Mental Journal API')
+      .setDescription('API for the Mental Journal app')
+      .setVersion('1.0')
+      .build();
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);

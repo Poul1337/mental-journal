@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 
-import { REGISTER_USER_PORT } from '../auth/ports/register-user.port';
 import { FIND_USER_BY_EMAIL_PORT } from '../auth/ports/find-user-by-email.port';
-import { VERIFY_EMAIL_PORT } from '../auth/ports/verify-email.port';
 import { ISSUE_EMAIL_VERIFICATION_PORT } from '../auth/ports/issue-email-verification.port';
+import { REGISTER_USER_PORT } from '../auth/ports/register-user.port';
+import { VERIFY_EMAIL_PORT } from '../auth/ports/verify-email.port';
 import { FindUserByEmailAdapter } from './adapters/find-user-by-email.adapter';
 import { FindUserByIdAdapter } from './adapters/find-user-by-id.adapter';
 import { IssueEmailVerificationAdapter } from './adapters/issue-email-verification.adapter';
