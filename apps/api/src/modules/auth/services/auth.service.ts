@@ -83,6 +83,8 @@ export class AuthService {
 
   private readonly accessTokenTtlMs: number;
 
+  private readonly secureCookies: boolean;
+
   constructor(
     private readonly configService: ConfigService,
 
@@ -130,6 +132,8 @@ export class AuthService {
       this.configService.getOrThrow<string>('ACCESS_TOKEN_TTL'),
       'ACCESS_TOKEN_TTL',
     );
+
+    this.secureCookies = this.configService.get<string>('ENV_NODE') === 'production';
   }
 
   async register(dto: RegisterDto): Promise<RegisterResponseDto> {
@@ -184,10 +188,8 @@ export class AuthService {
     });
 
     res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      path: '/v1/auth',
-      sameSite: 'lax',
-      maxAge: this.sessionRefreshTtlMs,
+      ...this.cookieBase('/v1/auth'),
+      maxAge: this.accessTokenTtlMs
     });
 
     const accessToken = await this.jwtService.signAsync({
@@ -196,10 +198,8 @@ export class AuthService {
     });
 
     res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: this.accessTokenTtlMs,
+      ...this.cookieBase('/'),
+      maxAge: this.accessTokenTtlMs
     });
 
     return { id: user.id, anonName: user.anonName };
@@ -260,12 +260,10 @@ export class AuthService {
     }
 
     res.clearCookie('access_token', {
-      path: '/',
-      sameSite: 'lax',
+      ...this.cookieBase('/')
     });
     res.clearCookie('refresh_token', {
-      path: '/v1/auth',
-      sameSite: 'lax',
+      ...this.cookieBase('/v1/auth')
     });
 
     return { message: 'Logged out successfully' };
@@ -275,12 +273,10 @@ export class AuthService {
     await this.deleteAllSessionsPort.execute({ userId });
 
     res.clearCookie('access_token', {
-      path: '/',
-      sameSite: 'lax',
+      ...this.cookieBase('/')
     });
     res.clearCookie('refresh_token', {
-      path: '/v1/auth',
-      sameSite: 'lax',
+      ...this.cookieBase('/')
     });
 
     return { message: 'Logged out successfully' };
@@ -299,16 +295,14 @@ export class AuthService {
 
     if (!session || session.expiresAt.getTime() < Date.now()) {
       res.clearCookie('refresh_token', {
-        path: '/v1/auth',
-        sameSite: 'lax',
+        ...this.cookieBase('/')
       });
       throw new UnauthorizedUserException(ErrorPath.AUTH);
     }
 
     if (session.user.status !== UserStatus.ACTIVE) {
       res.clearCookie('refresh_token', {
-        path: '/v1/auth',
-        sameSite: 'lax',
+        ...this.cookieBase('/')
       });
       throw new AccountNotAllowedException(ErrorPath.AUTH);
     }
@@ -327,10 +321,8 @@ export class AuthService {
     });
 
     res.cookie('refresh_token', newRefresh, {
-      httpOnly: true,
-      path: '/v1/auth',
-      sameSite: 'lax',
-      maxAge: this.sessionRefreshTtlMs,
+      ...this.cookieBase('/v1/auth'),
+      maxAge: this.sessionRefreshTtlMs
     });
 
     const accessToken = await this.jwtService.signAsync({
@@ -339,14 +331,21 @@ export class AuthService {
     });
 
     res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: this.accessTokenTtlMs,
+      ...this.cookieBase('/'),
+      maxAge: this.sessionRefreshTtlMs
     });
 
     return { id: session.userId, anonName: session.user.anonName };
   }
+
+  private cookieBase(path: string) {
+    return {
+      httpOnly: true,
+      secure: this.secureCookies,
+      sameSite: 'lax' as const,
+      path,
+    }
+  }
 }
 
-//Check if brake one service into few
+//Check if split one service into few

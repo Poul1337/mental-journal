@@ -42,7 +42,7 @@ async function bootstrap() {
     }),
   );
 
-  if (process.env.NODE_ENV !== 'prod') {
+  if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Mental Journal API')
       .setDescription('API for the Mental Journal app')
