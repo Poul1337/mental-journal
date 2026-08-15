@@ -23,8 +23,49 @@ import { REGISTER_USER_PORT } from '../ports/register-user.port';
 import { SAVE_SESSION_PORT } from '../ports/save-session.port';
 import { SEND_VERIFICATION_EMAIL_PORT } from '../ports/send-verification-email.port';
 import { VERIFY_EMAIL_PORT } from '../ports/verify-email.port';
+import { parseTtlMs } from '../utils/parse-ttl-ms.util';
 import { AuthService } from './auth.service';
 import { HashingService } from './hashing.service';
+import { UPDATE_SESSION_PORT } from '../ports/update-session.port';
+import { Prisma } from '../../../generated/prisma/client';
+
+const ACCESS_TOKEN_TTL = '15m';
+const SESSION_REFRESH_TTL = '7d';
+const ACCESS_TOKEN_TTL_MS = parseTtlMs(ACCESS_TOKEN_TTL, 'ACCESS_TOKEN_TTL');
+const SESSION_REFRESH_TTL_MS = parseTtlMs(
+  SESSION_REFRESH_TTL,
+  'SESSION_REFRESH_TTL',
+);
+
+const refreshCookieOptions = {
+  httpOnly: true,
+  secure: false,
+  sameSite: 'lax' as const,
+  path: '/v1/auth',
+  maxAge: SESSION_REFRESH_TTL_MS,
+};
+
+const accessCookieOptions = {
+  httpOnly: true,
+  secure: false,
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: ACCESS_TOKEN_TTL_MS,
+};
+
+const clearAccessCookieOptions = {
+  httpOnly: true,
+  secure: false,
+  sameSite: 'lax' as const,
+  path: '/',
+};
+
+const clearRefreshCookieOptions = {
+  httpOnly: true,
+  secure: false,
+  sameSite: 'lax' as const,
+  path: '/v1/auth',
+};
 
 const makeLoginDto = (overrides = {}) => ({
   email: 'test@test.pl',
@@ -66,14 +107,21 @@ describe('AuthService', () => {
   const deleteSessionPort = { execute: jest.fn() };
   const deleteAllSessionsPort = { execute: jest.fn() };
   const findByRefreshTokenHashPort = { execute: jest.fn() };
+  const updateSessionPort = { execute: jest.fn() }
 
   const configService = {
-    getOrThrow: jest.fn((key) => {
+    getOrThrow: jest.fn((key: string) => {
       const map: Record<string, string> = {
         FRONTEND_URL: 'http://localhost:3000',
         EMAIL_TTL: '10m',
-        SESSION_REFRESH_TTL: '7d',
-        ACCESS_TOKEN_TTL: '15m',
+        SESSION_REFRESH_TTL,
+        ACCESS_TOKEN_TTL,
+      };
+      return map[key];
+    }),
+    get: jest.fn((key: string) => {
+      const map: Record<string, string> = {
+        NODE_ENV: 'development',
       };
       return map[key];
     }),
@@ -109,6 +157,7 @@ describe('AuthService', () => {
           provide: FIND_BY_REFRESH_TOKEN_HASH_PORT,
           useValue: findByRefreshTokenHashPort,
         },
+        { provide: UPDATE_SESSION_PORT, useValue: updateSessionPort }
       ],
     }).compile();
 
@@ -144,12 +193,12 @@ describe('AuthService', () => {
       expect(res.cookie).toHaveBeenCalledWith(
         'refresh_token',
         expect.any(String),
-        expect.objectContaining({ httpOnly: true, path: '/v1/auth' }),
+        refreshCookieOptions,
       );
       expect(res.cookie).toHaveBeenCalledWith(
         'access_token',
         'access-token',
-        expect.objectContaining({ httpOnly: true, path: '/' }),
+        accessCookieOptions,
       );
       expect(result).toEqual({ id: 'user-1', anonName: 'TestUser' });
     });
@@ -393,7 +442,7 @@ describe('AuthService', () => {
       });
       expect(res.clearCookie).toHaveBeenCalledWith(
         'refresh_token',
-        expect.objectContaining({ path: '/v1/auth' }),
+        clearRefreshCookieOptions,
       );
     });
 
@@ -416,8 +465,7 @@ describe('AuthService', () => {
         },
       });
 
-      deleteSessionPort.execute.mockResolvedValue(undefined);
-      saveSessionPort.execute.mockResolvedValue(undefined);
+      updateSessionPort.execute.mockResolvedValue(undefined)
       jwtService.signAsync.mockResolvedValue('new-access-token');
 
       const result = await authService.refresh(res, refreshToken);
@@ -425,27 +473,62 @@ describe('AuthService', () => {
       expect(findByRefreshTokenHashPort.execute).toHaveBeenCalledWith({
         refreshTokenHash: oldTokenHash,
       });
-      expect(deleteSessionPort.execute).toHaveBeenCalledWith({
-        refreshTokenHash: oldTokenHash,
-      });
-      expect(saveSessionPort.execute).toHaveBeenCalledWith({
-        userId: 'user-1',
-        refreshTokenHash: expect.any(String),
+      expect(updateSessionPort.execute).toHaveBeenCalledWith({
+        oldHash: oldTokenHash,
+        newHash: expect.any(String),
         expiresAt: expect.any(Date),
-      });
+      })
       expect(jwtService.signAsync).toHaveBeenCalled();
       expect(res.cookie).toHaveBeenCalledWith(
         'refresh_token',
         expect.any(String),
-        expect.any(Object),
+        refreshCookieOptions,
       );
       expect(res.cookie).toHaveBeenCalledWith(
         'access_token',
         'new-access-token',
-        expect.any(Object),
+        accessCookieOptions,
       );
       expect(result).toEqual({ id: 'user-1', anonName: 'TestUser' });
     });
+
+    it('should throw UnauthorizedUserException when session update races', async () => {
+      const refreshToken = '1234567890abcdefgh';
+      const res = makeRes(true);
+
+      findByRefreshTokenHashPort.execute.mockResolvedValue({
+        id: 'session-1',
+        userId: 'user-1',
+        expiresAt: new Date(Date.now() + 60_000),
+        user: {
+          id: 'user-1',
+          anonName: 'TestUser',
+          status: UserStatus.ACTIVE,
+          emailVerified: true,
+        },
+      });
+
+      updateSessionPort.execute.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Record not found', {
+          code: 'P2025',
+          clientVersion: 'test'
+        })
+      )
+
+      await expect(authService.refresh(res, refreshToken)).rejects.toThrow(
+        UnauthorizedUserException,
+      );
+
+      expect(res.clearCookie).toHaveBeenCalledWith(
+        'refresh_token',
+        clearRefreshCookieOptions,
+      );
+      expect(res.clearCookie).toHaveBeenCalledWith(
+        'access_token',
+        clearAccessCookieOptions
+      )
+      expect(res.cookie).not.toHaveBeenCalled();
+    })
   });
 
   describe('logout', () => {
@@ -463,11 +546,11 @@ describe('AuthService', () => {
       });
       expect(res.clearCookie).toHaveBeenCalledWith(
         'access_token',
-        expect.objectContaining({ path: '/' }),
+        clearAccessCookieOptions,
       );
       expect(res.clearCookie).toHaveBeenCalledWith(
         'refresh_token',
-        expect.objectContaining({ path: '/v1/auth' }),
+        clearRefreshCookieOptions,
       );
       expect(result).toEqual({ message: 'Logged out successfully' });
     });
@@ -482,11 +565,11 @@ describe('AuthService', () => {
       expect(deleteSessionPort.execute).not.toHaveBeenCalled();
       expect(res.clearCookie).toHaveBeenCalledWith(
         'access_token',
-        expect.objectContaining({ path: '/' }),
+        clearAccessCookieOptions,
       );
       expect(res.clearCookie).toHaveBeenCalledWith(
         'refresh_token',
-        expect.objectContaining({ path: '/v1/auth' }),
+        clearRefreshCookieOptions,
       );
       expect(result).toEqual({ message: 'Logged out successfully' });
     });
@@ -505,11 +588,11 @@ describe('AuthService', () => {
       });
       expect(res.clearCookie).toHaveBeenCalledWith(
         'access_token',
-        expect.objectContaining({ path: '/' }),
+        clearAccessCookieOptions,
       );
       expect(res.clearCookie).toHaveBeenCalledWith(
         'refresh_token',
-        expect.objectContaining({ path: '/v1/auth' }),
+        clearRefreshCookieOptions,
       );
       expect(result).toEqual({ message: 'Logged out successfully' });
     });

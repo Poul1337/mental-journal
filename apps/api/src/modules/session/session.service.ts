@@ -36,6 +36,17 @@ export class SessionService {
     });
   }
 
+  async updateSession(input: {
+    oldHash: string,
+    newHash: string,
+    expiresAt: Date
+  }): Promise<void> {
+    await this.prisma.session.update({
+      where: { refreshTokenHash: input.oldHash },
+      data: { refreshTokenHash: input.newHash, expiresAt: input.expiresAt }
+    })
+  }
+
   async findByRefreshTokenHash(refreshTokenHash: string) {
     return await this.prisma.session.findUnique({
       where: { refreshTokenHash },

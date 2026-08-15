@@ -53,16 +53,14 @@ export class MailService {
       });
 
       if (error) {
-        this.logger.error(`Failed to send mail to ${params.to}`, error);
+        this.logger.error('Failed to send verification email', error);
         throw new MailSendFailedException();
       }
 
-      this.logger.log(
-        `Mail sent to: ${params.to} (id=${data.id ?? 'unknown'})`,
-      );
+      this.logger.log(`Verification email sent (id=${data.id ?? 'unknown'})`);
     } catch (error) {
       if (error instanceof MailSendFailedException) throw error;
-      this.logger.error(`Resend request failed for ${params.to}`, error);
+      this.logger.error('Failed to send verification email', error);
       throw new MailSendFailedException();
     }
   }

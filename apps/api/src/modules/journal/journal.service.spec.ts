@@ -1,11 +1,12 @@
 import { Test, TestingModule } from "@nestjs/testing"
-import { ENTRIES_LIST_TAKE, JournalService } from "./journal.service"
+import { JournalService } from "./journal.service"
 import { PrismaService } from "../../prisma/prisma.service"
 import { EntryStatus, EntryVisibility } from "../../generated/prisma/enums"
 import { CreateEntryDto } from "./dtos/create-entry.dto";
 import { ListEntriesQueryDto } from "./dtos/list-entries-query.dto";
 import { EntryNotFoundException } from "./exceptions/entry-not-found.exception";
 import { UpdateEntryDto } from "./dtos/update-entry.dto";
+import { ENTRIES_LIST_TAKE } from "./consts/entry.const";
 
 const USER_ID = 'user-1';
 const ENTRY_ID = 'entry-1';

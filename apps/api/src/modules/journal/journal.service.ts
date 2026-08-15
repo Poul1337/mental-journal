@@ -11,8 +11,7 @@ import {
 import { UpdateEntryDto } from './dtos/update-entry.dto';
 import { EntryNotFoundException } from './exceptions/entry-not-found.exception';
 import { Entry, JournalMapper } from './mappers/journal.mapper';
-
-export const ENTRIES_LIST_TAKE = 10;
+import { ENTRIES_LIST_TAKE } from './consts/entry.const';
 
 @Injectable()
 export class JournalService {

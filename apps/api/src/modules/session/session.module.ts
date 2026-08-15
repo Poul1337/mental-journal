@@ -9,6 +9,8 @@ import { DeleteSessionAdapter } from './adapters/delete-session.adapter';
 import { FindByRefreshTokenHashAdapter } from './adapters/find-by-refresh-token-hash.adapter';
 import { SaveSessionAdapter } from './adapters/save-session.adapter';
 import { SessionService } from './session.service';
+import { UpdateSessionAdapter } from './adapters/update-session.adapter';
+import { UPDATE_SESSION_PORT } from '../auth/ports/update-session.port';
 
 @Module({
   providers: [
@@ -20,12 +22,14 @@ import { SessionService } from './session.service';
       provide: FIND_BY_REFRESH_TOKEN_HASH_PORT,
       useClass: FindByRefreshTokenHashAdapter,
     },
+    { provide: UPDATE_SESSION_PORT, useClass: UpdateSessionAdapter }
   ],
   exports: [
     SAVE_SESSION_PORT,
     DELETE_SESSION_PORT,
     DELETE_ALL_SESSIONS_PORT,
     FIND_BY_REFRESH_TOKEN_HASH_PORT,
+    UPDATE_SESSION_PORT
   ],
 })
 export class SessionModule {}

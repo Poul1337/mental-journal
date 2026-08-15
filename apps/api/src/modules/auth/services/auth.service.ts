@@ -56,6 +56,8 @@ import { createRandomToken } from '../utils/create-random-token.util';
 import { parseTtlMs } from '../utils/parse-ttl-ms.util';
 import { Password } from '../value-objects/password.vo';
 import { HashingService } from './hashing.service';
+import { UPDATE_SESSION_PORT, UpdateSessionPort } from '../ports/update-session.port';
+import { Prisma } from '../../../generated/prisma/client';
 
 const DUMMY_PASSWORD_HASH =
   '$2b$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012';
@@ -82,8 +84,6 @@ export class AuthService {
   private readonly sessionRefreshTtlMs: number;
 
   private readonly accessTokenTtlMs: number;
-
-  private readonly secureCookies: boolean;
 
   constructor(
     private readonly configService: ConfigService,
@@ -118,6 +118,9 @@ export class AuthService {
 
     @Inject(FIND_BY_REFRESH_TOKEN_HASH_PORT)
     private readonly findByRefreshTokenHashPort: FindByRefreshTokenHashPort,
+
+    @Inject(UPDATE_SESSION_PORT)
+    private readonly updateSessionPort: UpdateSessionPort
   ) {
     this.frontEndUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     this.emailTtlMs = parseTtlMs(
@@ -132,8 +135,6 @@ export class AuthService {
       this.configService.getOrThrow<string>('ACCESS_TOKEN_TTL'),
       'ACCESS_TOKEN_TTL',
     );
-
-    this.secureCookies = this.configService.get<string>('ENV_NODE') === 'production';
   }
 
   async register(dto: RegisterDto): Promise<RegisterResponseDto> {
@@ -158,7 +159,7 @@ export class AuthService {
         verificationLink,
       });
     } catch (error) {
-      this.logger.warn(`Verification email failed for ${email}`, error);
+      this.logger.warn(`Verification email failed for userId=${result.id}`, error);
     }
 
     return { id: result.id, anonName: result.anonName };
@@ -189,7 +190,7 @@ export class AuthService {
 
     res.cookie('refresh_token', refreshToken, {
       ...this.cookieBase('/v1/auth'),
-      maxAge: this.accessTokenTtlMs
+      maxAge: this.sessionRefreshTtlMs
     });
 
     const accessToken = await this.jwtService.signAsync({
@@ -241,7 +242,7 @@ export class AuthService {
           verificationLink,
         });
       } catch (error) {
-        this.logger.warn(`Verification email failed for ${normalized}`, error);
+        this.logger.warn('Verification email failed on resend', error);
       }
     }
 
@@ -276,7 +277,7 @@ export class AuthService {
       ...this.cookieBase('/')
     });
     res.clearCookie('refresh_token', {
-      ...this.cookieBase('/')
+      ...this.cookieBase('/v1/auth')
     });
 
     return { message: 'Logged out successfully' };
@@ -295,14 +296,14 @@ export class AuthService {
 
     if (!session || session.expiresAt.getTime() < Date.now()) {
       res.clearCookie('refresh_token', {
-        ...this.cookieBase('/')
+        ...this.cookieBase('/v1/auth')
       });
       throw new UnauthorizedUserException(ErrorPath.AUTH);
     }
 
     if (session.user.status !== UserStatus.ACTIVE) {
       res.clearCookie('refresh_token', {
-        ...this.cookieBase('/')
+        ...this.cookieBase('/v1/auth')
       });
       throw new AccountNotAllowedException(ErrorPath.AUTH);
     }
@@ -313,27 +314,44 @@ export class AuthService {
       expiresAt,
     } = createRandomToken(this.sessionRefreshTtlMs);
 
-    await this.deleteSessionPort.execute({ refreshTokenHash: tokenHash });
-    await this.saveSessionPort.execute({
-      userId: session.userId,
-      refreshTokenHash: newHash,
-      expiresAt,
-    });
+    try {
+      await this.updateSessionPort.execute({ 
+        oldHash: tokenHash,
+        newHash,
+        expiresAt
+      })
 
-    res.cookie('refresh_token', newRefresh, {
-      ...this.cookieBase('/v1/auth'),
-      maxAge: this.sessionRefreshTtlMs
-    });
+      res.cookie('refresh_token', newRefresh, {
+        ...this.cookieBase('/v1/auth'),
+        maxAge: this.sessionRefreshTtlMs
+      });
+  
+      const accessToken = await this.jwtService.signAsync({
+        sub: session.userId,
+        anonName: session.user.anonName,
+      });
+  
+      res.cookie('access_token', accessToken, {
+        ...this.cookieBase('/'),
+        maxAge: this.accessTokenTtlMs
+      });
+  
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        res.clearCookie('access_token', {
+          ...this.cookieBase('/')
+        })
+        res.clearCookie('refresh_token', {
+          ...this.cookieBase('/v1/auth')
+        })
+        throw new UnauthorizedUserException(ErrorPath.AUTH);
+      }
 
-    const accessToken = await this.jwtService.signAsync({
-      sub: session.userId,
-      anonName: session.user.anonName,
-    });
-
-    res.cookie('access_token', accessToken, {
-      ...this.cookieBase('/'),
-      maxAge: this.sessionRefreshTtlMs
-    });
+      throw error;
+    }
 
     return { id: session.userId, anonName: session.user.anonName };
   }
@@ -341,7 +359,7 @@ export class AuthService {
   private cookieBase(path: string) {
     return {
       httpOnly: true,
-      secure: this.secureCookies,
+      secure: this.configService.get<string>('NODE_ENV') === 'production',
       sameSite: 'lax' as const,
       path,
     }
