@@ -8,6 +8,7 @@ import { VerifyEmailResult } from '../../../common/enums/verify-email-result.enu
 import { AccountNotAllowedException } from '../../../common/exceptions/custom/account-not-allowed.exception';
 import { AccountNotVerifiedException } from '../../../common/exceptions/custom/account-not-verified.exception';
 import { UnauthorizedUserException } from '../../../common/exceptions/custom/unauthorized-user.exception';
+import { Prisma } from '../../../generated/prisma/client';
 import { UserStatus } from '../../../generated/prisma/enums';
 import { LoginDto } from '../dtos/login.dto';
 import { RegisterDto } from '../dtos/register.dto';
@@ -22,12 +23,11 @@ import { ISSUE_EMAIL_VERIFICATION_PORT } from '../ports/issue-email-verification
 import { REGISTER_USER_PORT } from '../ports/register-user.port';
 import { SAVE_SESSION_PORT } from '../ports/save-session.port';
 import { SEND_VERIFICATION_EMAIL_PORT } from '../ports/send-verification-email.port';
+import { UPDATE_SESSION_PORT } from '../ports/update-session.port';
 import { VERIFY_EMAIL_PORT } from '../ports/verify-email.port';
 import { parseTtlMs } from '../utils/parse-ttl-ms.util';
 import { AuthService } from './auth.service';
 import { HashingService } from './hashing.service';
-import { UPDATE_SESSION_PORT } from '../ports/update-session.port';
-import { Prisma } from '../../../generated/prisma/client';
 
 const ACCESS_TOKEN_TTL = '15m';
 const SESSION_REFRESH_TTL = '7d';

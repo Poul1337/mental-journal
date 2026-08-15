@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { UpdateSessionInput, UpdateSessionPort } from "../../auth/ports/update-session.port";
 import { SessionService } from "../session.service";
 

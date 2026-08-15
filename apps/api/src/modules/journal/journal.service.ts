@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { EntryStatus } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ENTRIES_LIST_TAKE } from './consts/entry.const';
 import { CreateEntryDto } from './dtos/create-entry.dto';
 import { ListEntriesQueryDto } from './dtos/list-entries-query.dto';
 import {
@@ -11,7 +12,6 @@ import {
 import { UpdateEntryDto } from './dtos/update-entry.dto';
 import { EntryNotFoundException } from './exceptions/entry-not-found.exception';
 import { Entry, JournalMapper } from './mappers/journal.mapper';
-import { ENTRIES_LIST_TAKE } from './consts/entry.const';
 
 @Injectable()
 export class JournalService {

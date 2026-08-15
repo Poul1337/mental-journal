@@ -10,6 +10,7 @@ import { VerifyEmailResult } from '../../../common/enums/verify-email-result.enu
 import { AccountNotAllowedException } from '../../../common/exceptions/custom/account-not-allowed.exception';
 import { UnauthorizedUserException } from '../../../common/exceptions/custom/unauthorized-user.exception';
 import { assertAccountCanAct } from '../../../common/utils/assert-account-can-act.util';
+import { Prisma } from '../../../generated/prisma/client';
 import { UserStatus } from '../../../generated/prisma/enums';
 import { IssueEmailVerificationResponseDto } from '../dtos/issue-email-verification-response.dto';
 import { LoginDto } from '../dtos/login.dto';
@@ -51,13 +52,12 @@ import {
   SEND_VERIFICATION_EMAIL_PORT,
   SendVerificationEmailPort,
 } from '../ports/send-verification-email.port';
+import { UPDATE_SESSION_PORT, UpdateSessionPort } from '../ports/update-session.port';
 import { VERIFY_EMAIL_PORT, VerifyEmailPort } from '../ports/verify-email.port';
 import { createRandomToken } from '../utils/create-random-token.util';
 import { parseTtlMs } from '../utils/parse-ttl-ms.util';
 import { Password } from '../value-objects/password.vo';
 import { HashingService } from './hashing.service';
-import { UPDATE_SESSION_PORT, UpdateSessionPort } from '../ports/update-session.port';
-import { Prisma } from '../../../generated/prisma/client';
 
 const DUMMY_PASSWORD_HASH =
   '$2b$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012';
