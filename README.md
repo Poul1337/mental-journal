@@ -1,159 +1,100 @@
-# Turborepo starter
+# Mental Journal
 
-This Turborepo starter is maintained by the Turborepo core team.
+Backend API for a **private mental journal**: register with email, verify account, then create and manage your own journal entries (mood, emotional tags, visibility).
 
-## Using this example
+This is intentionally a learning-focused NestJS backend. There is **no frontend app in this repo yet**, and no public social feed / chat / AI moderation in the current codebase.
 
-Run the following command:
+## Stack
 
-```sh
-npx create-turbo@latest
-```
+- **Monorepo:** pnpm + Turborepo
+- **API:** NestJS 11, Prisma 7, PostgreSQL 16
+- **Auth:** JWT access token + refresh session (httpOnly cookies), email verification via Resend
+- **Other:** Swagger (non-production), throttling, i18n for journal tags (PL/EN)
 
-## What's inside?
+## What’s implemented
 
-This Turborepo includes the following packages/apps:
+| Area | Endpoints (prefix `/v1`) |
+| --- | --- |
+| Auth | `POST /auth/register`, `POST /auth/login`, `GET /auth/verify-email`, `POST /auth/resend-verification`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/logout-all`, `GET /auth/me` |
+| Journal | CRUD under `/journal` (authenticated, own entries only) |
+| Health | `GET /health` |
 
-### Apps and Packages
+Auth details worth knowing:
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- Access + refresh tokens live in **httpOnly** cookies (`secure` in `NODE_ENV=production`)
+- Refresh tokens are stored hashed; rotation uses an atomic DB update
+- Account must be **ACTIVE** and **email-verified** to use journal routes
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Requirements
 
-### Utilities
+- Node.js ≥ 18
+- pnpm 9
+- Docker (for Postgres)
 
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+## Setup
 
 ```sh
-cd my-turborepo
-turbo build
+pnpm install
 ```
 
-Without global `turbo`, use your package manager:
+Copy env templates and fill values:
 
 ```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+cp apps/api/.env.example apps/api/.env
+# optional: docker/.env for Postgres user/password/port
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Minimum for local API (`apps/api/.env`):
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+- `DATABASE_URL` — e.g. `postgresql://mental_journal:mental_journal@localhost:5432/mental_journal`
+- `FRONTEND_URL` — used in verification links (e.g. `http://localhost:3000`)
+- `JWT_ACCESS_SECRET`, `ACCESS_TOKEN_TTL`, `SESSION_REFRESH_TTL`, `EMAIL_TTL`
+- `RESEND_API_KEY`, `MAIL_FROM`
+- `PORT` (default `3001`), optional throttle / `FALLBACK_LANGUAGE`
+- `NODE_ENV` — use `production` only in real deploy (enables secure cookies; disables Swagger)
+
+Start Postgres and apply migrations:
 
 ```sh
-turbo build --filter=docs
+pnpm docker:up
+pnpm db:migrate
 ```
 
-Without global `turbo`:
+## Develop
 
 ```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+pnpm dev
 ```
 
-### Develop
+This starts Docker Postgres (if needed) and the API in watch mode.
 
-To develop all apps and packages, run the following command:
+- API: `http://localhost:3001/v1`
+- Swagger (when not production): `http://localhost:3001/api`
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+## Scripts
 
-```sh
-cd my-turborepo
-turbo dev
+| Command | Description |
+| --- | --- |
+| `pnpm dev` | Docker up + API watch |
+| `pnpm build` | Build (runs tests as part of turbo pipeline) |
+| `pnpm api:test` | Unit tests for API |
+| `pnpm db:migrate` | Prisma migrate (dev) |
+| `pnpm db:studio` | Prisma Studio |
+| `pnpm docker:up` / `pnpm docker:down` | Postgres container |
+| `pnpm lint` / `pnpm check` | Lint / lint + format check |
+
+## Project layout
+
+```
+apps/api/          NestJS API + Prisma
+docker/            Postgres compose
+packages/          Shared ESLint / TypeScript configs
 ```
 
-Without global `turbo`, use your package manager:
+## Out of scope (for now)
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
+- Next.js (or any) client
+- Public posts, comments, chat, WebSockets
+- AI moderation
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+Those may appear later; the current MVP is **private journal + auth**.
