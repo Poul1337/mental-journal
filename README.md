@@ -13,11 +13,11 @@ This is intentionally a learning-focused NestJS backend. There is **no frontend 
 
 ## What’s implemented
 
-| Area | Endpoints (prefix `/v1`) |
-| --- | --- |
-| Auth | `POST /auth/register`, `POST /auth/login`, `GET /auth/verify-email`, `POST /auth/resend-verification`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/logout-all`, `GET /auth/me` |
-| Journal | CRUD under `/journal` (authenticated, own entries only) |
-| Health | `GET /health` |
+| Area    | Endpoints (prefix `/v1`)                                                                                                                                                                  |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth    | `POST /auth/register`, `POST /auth/login`, `GET /auth/verify-email`, `POST /auth/resend-verification`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/logout-all`, `GET /auth/me` |
+| Journal | CRUD under `/journal` (authenticated, own entries only)                                                                                                                                   |
+| Health  | `GET /health`                                                                                                                                                                             |
 
 Auth details worth knowing:
 
@@ -73,15 +73,15 @@ This starts Docker Postgres (if needed) and the API in watch mode.
 
 ## Scripts
 
-| Command | Description |
-| --- | --- |
-| `pnpm dev` | Docker up + API watch |
-| `pnpm build` | Build (runs tests as part of turbo pipeline) |
-| `pnpm api:test` | Unit tests for API |
-| `pnpm db:migrate` | Prisma migrate (dev) |
-| `pnpm db:studio` | Prisma Studio |
-| `pnpm docker:up` / `pnpm docker:down` | Postgres container |
-| `pnpm lint` / `pnpm check` | Lint / lint + format check |
+| Command                               | Description                                  |
+| ------------------------------------- | -------------------------------------------- |
+| `pnpm dev`                            | Docker up + API watch                        |
+| `pnpm build`                          | Build (runs tests as part of turbo pipeline) |
+| `pnpm api:test`                       | Unit tests for API                           |
+| `pnpm db:migrate`                     | Prisma migrate (dev)                         |
+| `pnpm db:studio`                      | Prisma Studio                                |
+| `pnpm docker:up` / `pnpm docker:down` | Postgres container                           |
+| `pnpm lint` / `pnpm check`            | Lint / lint + format check                   |
 
 ## Project layout
 

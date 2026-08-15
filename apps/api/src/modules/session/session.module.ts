@@ -22,14 +22,14 @@ import { SessionService } from './session.service';
       provide: FIND_BY_REFRESH_TOKEN_HASH_PORT,
       useClass: FindByRefreshTokenHashAdapter,
     },
-    { provide: UPDATE_SESSION_PORT, useClass: UpdateSessionAdapter }
+    { provide: UPDATE_SESSION_PORT, useClass: UpdateSessionAdapter },
   ],
   exports: [
     SAVE_SESSION_PORT,
     DELETE_SESSION_PORT,
     DELETE_ALL_SESSIONS_PORT,
     FIND_BY_REFRESH_TOKEN_HASH_PORT,
-    UPDATE_SESSION_PORT
+    UPDATE_SESSION_PORT,
   ],
 })
 export class SessionModule {}

@@ -1,37 +1,37 @@
 name: CI
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
+          push:
+                    branches: [main, master]
+          pull_request:
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+          group: ci-${{ github.ref }}
+          cancel-in-progress: true
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+          check:
+                    runs-on: ubuntu-latest
+                    timeout-minutes: 15
 
-    steps:
-      - uses: actions/checkout@v4
+                    steps:
+                              - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+                              - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
+                              - uses: actions/setup-node@v4
+                                with:
+                                          node-version: 22
+                                          cache: pnpm
 
-      - name: Install
-        run: pnpm install --frozen-lockfile
+                              - name: Install
+                                run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm lint
+                              - name: Lint
+                                run: pnpm lint
 
-      - name: Format check
-        run: pnpm format:check
+                              - name: Format check
+                                run: pnpm format:check
 
-      - name: Unit tests (api)
-        run: pnpm api:test
+                              - name: Unit tests (api)
+                                run: pnpm api:test

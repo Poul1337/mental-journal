@@ -107,7 +107,7 @@ describe('AuthService', () => {
   const deleteSessionPort = { execute: jest.fn() };
   const deleteAllSessionsPort = { execute: jest.fn() };
   const findByRefreshTokenHashPort = { execute: jest.fn() };
-  const updateSessionPort = { execute: jest.fn() }
+  const updateSessionPort = { execute: jest.fn() };
 
   const configService = {
     getOrThrow: jest.fn((key: string) => {
@@ -157,7 +157,7 @@ describe('AuthService', () => {
           provide: FIND_BY_REFRESH_TOKEN_HASH_PORT,
           useValue: findByRefreshTokenHashPort,
         },
-        { provide: UPDATE_SESSION_PORT, useValue: updateSessionPort }
+        { provide: UPDATE_SESSION_PORT, useValue: updateSessionPort },
       ],
     }).compile();
 
@@ -465,7 +465,7 @@ describe('AuthService', () => {
         },
       });
 
-      updateSessionPort.execute.mockResolvedValue(undefined)
+      updateSessionPort.execute.mockResolvedValue(undefined);
       jwtService.signAsync.mockResolvedValue('new-access-token');
 
       const result = await authService.refresh(res, refreshToken);
@@ -477,7 +477,7 @@ describe('AuthService', () => {
         oldHash: oldTokenHash,
         newHash: expect.any(String),
         expiresAt: expect.any(Date),
-      })
+      });
       expect(jwtService.signAsync).toHaveBeenCalled();
       expect(res.cookie).toHaveBeenCalledWith(
         'refresh_token',
@@ -511,9 +511,9 @@ describe('AuthService', () => {
       updateSessionPort.execute.mockRejectedValue(
         new Prisma.PrismaClientKnownRequestError('Record not found', {
           code: 'P2025',
-          clientVersion: 'test'
-        })
-      )
+          clientVersion: 'test',
+        }),
+      );
 
       await expect(authService.refresh(res, refreshToken)).rejects.toThrow(
         UnauthorizedUserException,
@@ -525,10 +525,10 @@ describe('AuthService', () => {
       );
       expect(res.clearCookie).toHaveBeenCalledWith(
         'access_token',
-        clearAccessCookieOptions
-      )
+        clearAccessCookieOptions,
+      );
       expect(res.cookie).not.toHaveBeenCalled();
-    })
+    });
   });
 
   describe('logout', () => {

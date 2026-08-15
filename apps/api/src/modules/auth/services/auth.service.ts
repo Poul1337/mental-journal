@@ -52,7 +52,10 @@ import {
   SEND_VERIFICATION_EMAIL_PORT,
   SendVerificationEmailPort,
 } from '../ports/send-verification-email.port';
-import { UPDATE_SESSION_PORT, UpdateSessionPort } from '../ports/update-session.port';
+import {
+  UPDATE_SESSION_PORT,
+  UpdateSessionPort,
+} from '../ports/update-session.port';
 import { VERIFY_EMAIL_PORT, VerifyEmailPort } from '../ports/verify-email.port';
 import { createRandomToken } from '../utils/create-random-token.util';
 import { parseTtlMs } from '../utils/parse-ttl-ms.util';
@@ -120,7 +123,7 @@ export class AuthService {
     private readonly findByRefreshTokenHashPort: FindByRefreshTokenHashPort,
 
     @Inject(UPDATE_SESSION_PORT)
-    private readonly updateSessionPort: UpdateSessionPort
+    private readonly updateSessionPort: UpdateSessionPort,
   ) {
     this.frontEndUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     this.emailTtlMs = parseTtlMs(
@@ -159,7 +162,10 @@ export class AuthService {
         verificationLink,
       });
     } catch (error) {
-      this.logger.warn(`Verification email failed for userId=${result.id}`, error);
+      this.logger.warn(
+        `Verification email failed for userId=${result.id}`,
+        error,
+      );
     }
 
     return { id: result.id, anonName: result.anonName };
@@ -190,7 +196,7 @@ export class AuthService {
 
     res.cookie('refresh_token', refreshToken, {
       ...this.cookieBase('/v1/auth'),
-      maxAge: this.sessionRefreshTtlMs
+      maxAge: this.sessionRefreshTtlMs,
     });
 
     const accessToken = await this.jwtService.signAsync({
@@ -200,7 +206,7 @@ export class AuthService {
 
     res.cookie('access_token', accessToken, {
       ...this.cookieBase('/'),
-      maxAge: this.accessTokenTtlMs
+      maxAge: this.accessTokenTtlMs,
     });
 
     return { id: user.id, anonName: user.anonName };
@@ -261,10 +267,10 @@ export class AuthService {
     }
 
     res.clearCookie('access_token', {
-      ...this.cookieBase('/')
+      ...this.cookieBase('/'),
     });
     res.clearCookie('refresh_token', {
-      ...this.cookieBase('/v1/auth')
+      ...this.cookieBase('/v1/auth'),
     });
 
     return { message: 'Logged out successfully' };
@@ -274,10 +280,10 @@ export class AuthService {
     await this.deleteAllSessionsPort.execute({ userId });
 
     res.clearCookie('access_token', {
-      ...this.cookieBase('/')
+      ...this.cookieBase('/'),
     });
     res.clearCookie('refresh_token', {
-      ...this.cookieBase('/v1/auth')
+      ...this.cookieBase('/v1/auth'),
     });
 
     return { message: 'Logged out successfully' };
@@ -296,14 +302,14 @@ export class AuthService {
 
     if (!session || session.expiresAt.getTime() < Date.now()) {
       res.clearCookie('refresh_token', {
-        ...this.cookieBase('/v1/auth')
+        ...this.cookieBase('/v1/auth'),
       });
       throw new UnauthorizedUserException(ErrorPath.AUTH);
     }
 
     if (session.user.status !== UserStatus.ACTIVE) {
       res.clearCookie('refresh_token', {
-        ...this.cookieBase('/v1/auth')
+        ...this.cookieBase('/v1/auth'),
       });
       throw new AccountNotAllowedException(ErrorPath.AUTH);
     }
@@ -315,38 +321,37 @@ export class AuthService {
     } = createRandomToken(this.sessionRefreshTtlMs);
 
     try {
-      await this.updateSessionPort.execute({ 
+      await this.updateSessionPort.execute({
         oldHash: tokenHash,
         newHash,
-        expiresAt
-      })
+        expiresAt,
+      });
 
       res.cookie('refresh_token', newRefresh, {
         ...this.cookieBase('/v1/auth'),
-        maxAge: this.sessionRefreshTtlMs
+        maxAge: this.sessionRefreshTtlMs,
       });
-  
+
       const accessToken = await this.jwtService.signAsync({
         sub: session.userId,
         anonName: session.user.anonName,
       });
-  
+
       res.cookie('access_token', accessToken, {
         ...this.cookieBase('/'),
-        maxAge: this.accessTokenTtlMs
+        maxAge: this.accessTokenTtlMs,
       });
-  
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
         res.clearCookie('access_token', {
-          ...this.cookieBase('/')
-        })
+          ...this.cookieBase('/'),
+        });
         res.clearCookie('refresh_token', {
-          ...this.cookieBase('/v1/auth')
-        })
+          ...this.cookieBase('/v1/auth'),
+        });
         throw new UnauthorizedUserException(ErrorPath.AUTH);
       }
 
@@ -362,7 +367,7 @@ export class AuthService {
       secure: this.configService.get<string>('NODE_ENV') === 'production',
       sameSite: 'lax' as const,
       path,
-    }
+    };
   }
 }
 
