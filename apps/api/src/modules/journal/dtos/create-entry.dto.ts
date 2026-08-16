@@ -11,6 +11,10 @@ import {
   MinLength,
 } from 'class-validator';
 
+import {
+  ALL_JOURNAL_TAGS,
+  JournalTag,
+} from '../../../common/consts/tags.const';
 import { EntryVisibility } from '../../../generated/prisma/enums';
 import {
   MAX_CONTENT_LENGTH,
@@ -18,7 +22,6 @@ import {
   MIN_CONTENT_LENGTH,
   MIN_MOOD,
 } from '../consts/entry.const';
-import { ALL_JOURNAL_TAGS, JournalTag } from '../consts/tags.const';
 
 export class CreateEntryDto {
   @ApiProperty({ example: 'Today I feel ...' })

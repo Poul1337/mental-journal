@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-import { EntryStatus } from '../../generated/prisma/enums';
+import { EntryStatus, EntryVisibility } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
+import { FindFeedInput, FindFeedResult } from '../feed/ports/find-feed.port';
 import { ENTRIES_LIST_TAKE } from './consts/entry.const';
 import { CreateEntryDto } from './dtos/create-entry.dto';
 import { ListEntriesQueryDto } from './dtos/list-entries-query.dto';
@@ -161,6 +162,42 @@ export class JournalService {
     return { id };
   }
 
+  async feed(dto: FindFeedInput): Promise<FindFeedResult> {
+    const { lastCreatedAt, lastCursorId, tags } = dto;
+
+    const feed = await this.prisma.journalEntry.findMany({
+      where: {
+        visibility: EntryVisibility.PUBLIC,
+        status: EntryStatus.ACTIVE,
+        deletedAt: null,
+        ...(tags?.length ? { tags: { hasSome: tags } } : {}),
+        ...(lastCursorId && lastCreatedAt
+          ? {
+              OR: [
+                { createdAt: { lt: lastCreatedAt } },
+                { createdAt: lastCreatedAt, id: { lt: lastCursorId } },
+              ],
+            }
+          : {}),
+      },
+      take: ENTRIES_LIST_TAKE + 1,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    });
+
+    const hasMore = feed.length > ENTRIES_LIST_TAKE;
+    const page = hasMore ? feed.slice(0, ENTRIES_LIST_TAKE) : feed;
+    const last = page[page.length - 1];
+
+    return {
+      items: page.map(JournalMapper.toFeedItem),
+      meta: {
+        hasMore,
+        nextCursor:
+          !hasMore || !last ? null : { id: last.id, createdAt: last.createdAt },
+      },
+    };
+  }
+
   private async assertEntryExists(
     entryId: string,
     userId: string,
@@ -179,5 +216,3 @@ export class JournalService {
     return existing;
   }
 }
-
-//TODO: Redis cache
